@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+
+  <!-- FORCE EVERYONE TO LATEST VERSION -->
+  <script>
+    const APP_VERSION = "202606192230";
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("v") !== APP_VERSION) {
+      url.searchParams.set("v", APP_VERSION);
+      window.location.replace(url.toString());
+    }
+  </script>
+
+  <!-- PREVENT IPHONE AUTO ZOOM -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>GR RACING SPORTS SDN. BHD.</title>
+
+  <meta name="theme-color" content="#101b26">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="GR RACING SPORTS">
+  <link rel="manifest" href="manifest.webmanifest?v=202606192230">
+  <link rel="stylesheet" href="style.css?v=202606192230">
+</head>
+
+<body>
+
+  <!-- TAP VERY TOP OF SCREEN TO GO BACK TOP -->
+  <div id="topTapZone"></div>
+
+  <div id="accountManagerScreen" class="accountManagerScreen hidden">
+    <div class="accountManagerHeader">
+      <div>
+        <h1>Registered Users</h1>
+        <p id="registeredUserCount">0 registered users</p>
+      </div>
+      <div class="accountManagerActions">
+        <button id="refreshRegisteredUsersButton" type="button">Refresh</button>
+        <button id="backToCatalogueButton" class="secondaryButton" type="button">Back To Catalogue</button>
+      </div>
+    </div>
+    <div id="registeredUserList" class="registeredUserList"></div>
+  </div>
+
+  <div id="loginScreen" class="loginScreen">
+    <div class="loginBox">
+      <div id="loginView">
+        <h2>Welcome to GR RACING</h2>
+        <p>Enter username and password</p>
+
+        <form id="loginForm">
+          <label for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
+
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+
+          <div class="loginActions">
+            <button id="loginButton" type="submit">Login</button>
+            <button id="showSignupButton" class="secondaryButton" type="button">Sign Up</button>
+          </div>
+
+          <button id="showForgotPasswordButton" class="textButton" type="button">Forgot Password?</button>
+        </form>
+
+        <small id="loginError" class="formMessage errorMessage"></small>
+        <small id="loginStatus" class="formMessage successMessage"></small>
+      </div>
+
+      <div id="signupView" class="hidden">
+        <h2>Sign Up</h2>
+        <p>Create your GR RACING customer account</p>
+
+        <form id="signupForm">
+          <label for="signupCompanyName">Full Company Name</label>
+          <input type="text" id="signupCompanyName" placeholder="Full Company Name" autocomplete="organization">
+
+          <label for="signupSsmNumber">SSM Number</label>
+          <input type="text" id="signupSsmNumber" placeholder="SSM Number">
+
+          <label for="signupWhatsappNumber">WhatsApp Number</label>
+          <input type="tel" id="signupWhatsappNumber" placeholder="Example: 60123456789" inputmode="tel" autocomplete="tel">
+
+          <label for="signupUsername">Username</label>
+          <input type="text" id="signupUsername" placeholder="Username" autocomplete="username">
+
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" placeholder="Password" autocomplete="new-password">
+
+          <label for="signupConfirmPassword">Confirm Password</label>
+          <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+
+          <div class="loginActions">
+            <button id="signupButton" type="submit">Sign Up</button>
+            <button id="backToLoginButton" class="secondaryButton" type="button">Back To Login</button>
+          </div>
+        </form>
+
+        <small id="signupError" class="formMessage errorMessage"></small>
+      </div>
+
+      <div id="forgotPasswordView" class="hidden">
+        <h2>Forgot Password</h2>
+        <p>Verify your registered account details</p>
+
+        <form id="forgotPasswordForm">
+          <label for="forgotSsmNumber">SSM Number</label>
+          <input type="text" id="forgotSsmNumber" placeholder="SSM Number">
+
+          <label for="forgotWhatsappNumber">Registered WhatsApp Number</label>
+          <input type="tel" id="forgotWhatsappNumber" placeholder="Example: 60123456789" inputmode="tel" autocomplete="tel">
+
+          <div class="loginActions">
+            <button id="verifyAccountButton" type="submit">Verify</button>
+            <button id="forgotBackToLoginButton" class="secondaryButton" type="button">Back To Login</button>
+          </div>
+        </form>
+
+        <small id="forgotPasswordError" class="formMessage errorMessage"></small>
+      </div>
+
+      <div id="resetPasswordView" class="hidden">
+        <h2>Reset Password</h2>
+        <p>Enter and confirm your new password</p>
+
+        <form id="resetPasswordForm">
+          <label for="resetPassword">New Password</label>
+          <input type="password" id="resetPassword" placeholder="New Password" autocomplete="new-password">
+
+          <label for="resetConfirmPassword">Confirm Password</label>
+          <input type="password" id="resetConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+
+          <div class="loginActions">
+            <button id="confirmResetPasswordButton" type="submit">Confirm</button>
+            <button id="resetBackToLoginButton" class="secondaryButton" type="button">Cancel</button>
+          </div>
+        </form>
+
+        <small id="resetPasswordError" class="formMessage errorMessage"></small>
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="appShell">
+
+    <header id="mainHeader">
+      <div class="topBar">
+        <h1 class="headerName">GR RACING SPORTS SDN. BHD.</h1>
+
+        <button id="refreshAppButton" title="Refresh App">
+          Refresh
+        </button>
+      </div>
+
+      <div class="searchBox">
+        <input type="text" id="search" placeholder="Search tyre...">
+        <button id="clearSearchButton" class="hidden" title="Clear Search">X</button>
+      </div>
+
+      <div class="headerActionRow">
+        <button id="logoutButton">Logout</button>
+
+        <div class="yearBox">
+          <button id="yearButton" onclick="showYearDropdown(event)">YEAR</button>
+        </div>
+
+        <div class="pcdMenu">
+          <button onclick="showSize('R12')">R12</button>
+          <button onclick="showSize('R13')">R13</button>
+          <button onclick="showSize('R14')">R14</button>
+          <button onclick="showSize('R15')">R15</button>
+          <button onclick="showSize('R16')">R16</button>
+          <button onclick="showSize('R17')">R17</button>
+          <button onclick="showSize('R18')">R18</button>
+          <button onclick="showSize('R19')">R19</button>
+          <button onclick="showSize('R20')">R20</button>
+          <button onclick="showSize('R21')">R21</button>
+          <button onclick="showSize('R22')">R22</button>
+        </div>
+      </div>
+
+      <button id="cartButton">
+        Cart (<span id="cartCount">0</span>)
+      </button>
+    </header>
+
+    <div id="yearDropdown" class="yearDropdown hidden">
+      <button onclick="clearYear()">ALL YEAR</button>
+      <button onclick="showYear('Y20')">Y20</button>
+      <button onclick="showYear('Y21')">Y21</button>
+      <button onclick="showYear('Y22')">Y22</button>
+      <button onclick="showYear('Y23')">Y23</button>
+      <button onclick="showYear('Y24')">Y24</button>
+      <button onclick="showYear('Y25')">Y25</button>
+      <button onclick="showYear('Y26')">Y26</button>
+    </div>
+
+    <div id="brandCategoryBar" class="categoryMenu">
+      <button class="brandCategoryButton textCategoryButton" data-category="ALL" onclick="showCategory('ALL')">
+        ALL
+      </button>
+
+      <button class="brandCategoryButton" data-category="APLUS VIETNAM" onclick="showCategory('APLUS VIETNAM')">
+        <img src="aplus-vietnam-logo.jpg?v=202606162610" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
+        <span>APLUS VIETNAM</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="APLUS" onclick="showCategory('APLUS')">
+        <img src="aplus-logo.jpg?v=202606162610" alt="APLUS" onerror="brandLogoMissing(this)">
+        <span>APLUS</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="ROCKBLADE" onclick="showCategory('ROCKBLADE')">
+        <img src="rockblade-logo.jpg?v=202606162610" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
+        <span>ROCKBLADE</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="HILO" onclick="showCategory('HILO')">
+        <img src="hilo-logo.jpg?v=202606162610" alt="HILO" onerror="brandLogoMissing(this)">
+        <span>HILO</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="ARDENT" onclick="showCategory('ARDENT')">
+        <img src="ardent-logo.jpg?v=202606162610" alt="ARDENT" onerror="brandLogoMissing(this)">
+        <span>ARDENT</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="RAUFFAN" onclick="showCategory('RAUFFAN')">
+        <img src="rauffan-logo.jpg?v=202606162610" alt="RAUFFAN" onerror="brandLogoMissing(this)">
+        <span>RAUFFAN</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="CROSSMAXX" onclick="showCategory('CROSSMAXX')">
+        <img src="crossmaxx-logo.jpg?v=202606162610" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
+        <span>CROSSMAXX</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="NEOLIN" onclick="showCategory('NEOLIN')">
+        <img src="neolin-logo.jpg?v=202606162610" alt="NEOLIN" onerror="brandLogoMissing(this)">
+        <span>NEOLIN</span>
+      </button>
+
+      <button class="brandCategoryButton" data-category="ROTALLA" onclick="showCategory('ROTALLA')">
+        <img src="rotalla-logo.jpg?v=202606162610" alt="ROTALLA" onerror="brandLogoMissing(this)">
+        <span>ROTALLA</span>
+      </button>
+
+      <button class="brandCategoryButton textCategoryButton" data-category="OTHERS" onclick="showCategory('OTHERS')">
+        OTHERS
+      </button>
+    </div>
+
+    <div id="productGrid" class="grid"></div>
+
+  </div>
+
+  <div id="cartPanel" class="hidden">
+    <div class="cartHeader">
+      <h2>Your Cart</h2>
+      <button id="closeCart">X</button>
+    </div>
+
+    <button id="branchSettingButton" type="button">Branch Setting</button>
+    <div id="branchSettingPanel" class="branchSettingPanel hidden"></div>
+
+    <div id="cartItems"></div>
+
+    <button id="sendWhatsapp">Send To WhatsApp</button>
+  </div>
+
+  <div id="photoViewer" class="hidden photoViewer">
+    <div class="photoViewerBox">
+      <button class="closeViewer" onclick="closePhotoViewer()">X</button>
+
+      <h3 id="viewerTitle">Photo</h3>
+
+      <img id="viewerImage" src="">
+
+      <div class="viewerButtons">
+        <button onclick="closePhotoViewer()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="logoutConfirmOverlay" class="hidden confirmOverlay">
+    <div class="confirmBox" onclick="event.stopPropagation()">
+      <h3>Confirm Logout / 确认登出</h3>
+      <p>Are you sure you want to log out? All current data, branch settings, and cart information will be reset.<br><br>您确定要登出吗？当前资料、分行设置和购物车内容将会被重置。</p>
+      <div class="confirmActions">
+        <button id="logoutConfirmCancel" type="button">Cancel / 取消</button>
+        <button id="logoutConfirmOk" type="button">Logout / 登出</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js?v=202606192230"></script>
+
+</body>
+</html>
