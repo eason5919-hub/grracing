@@ -13,7 +13,7 @@ let activeBranchSku = "";
 let quickBranchSku = "";
 let latestProductsJsonText = "";
 
-const APP_ASSET_VERSION = "202606192800";
+const APP_ASSET_VERSION = "202606192130";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
@@ -263,8 +263,8 @@ function handleSignup(event){
 
   const accounts = getAccounts();
 
-  if(accounts.some(acc => cleanValue(acc.username).toLowerCase() === username.toLowerCase())){
-    $("signupError").textContent = "Username already exists on this device.";
+  if(accounts.some(acc => normalizeWhatsappNumber(acc.whatsappNumber) === whatsappNumber)){
+    $("signupError").textContent = "WhatsApp number already registered.";
     return;
   }
 
@@ -389,110 +389,9 @@ function formatRegistrationDate(value){
   return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleString();
 }
 
-function isAccountManagerMode(){
-  return new URLSearchParams(window.location.search).get("view") === "users";
-}
-
-function isOrderManagerMode(){
-  return new URLSearchParams(window.location.search).get("view") === "orders";
-}
-
 function showCatalogueScreen(){
-  $("accountManagerScreen").classList.add("hidden");
-  $("orderListScreen").classList.add("hidden");
   $("appShell").classList.remove("hidden");
   requireLogin();
-}
-
-function showRegisteredUsersScreen(){
-  $("appShell").classList.add("hidden");
-  $("orderListScreen").classList.add("hidden");
-  $("accountManagerScreen").classList.remove("hidden");
-  $("loginScreen").classList.add("hidden");
-  renderRegisteredUsers();
-}
-
-function showOrderListScreen(){
-  $("appShell").classList.add("hidden");
-  $("accountManagerScreen").classList.add("hidden");
-  $("orderListScreen").classList.remove("hidden");
-  $("loginScreen").classList.add("hidden");
-  renderSavedOrders();
-}
-
-function renderRegisteredUsers(){
-  const accounts = getAccounts().slice().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  $("registeredUserCount").textContent = `${accounts.length} registered user${accounts.length === 1 ? "" : "s"}`;
-
-  if(accounts.length === 0){
-    $("registeredUserList").innerHTML = `<div class="emptyUserList">No registered users on this device.</div>`;
-    return;
-  }
-
-  $("registeredUserList").innerHTML = accounts.map(account => `
-    <div class="registeredUserCard">
-      <div class="registeredUserDetails">
-        <h2>${escapeHtml(account.companyName)}</h2>
-        <p><b>Username:</b> ${escapeHtml(account.username)}</p>
-        <p><b>SSM:</b> ${escapeHtml(account.ssmNumber)}</p>
-        <p><b>WhatsApp:</b> ${escapeHtml(account.whatsappNumber)}</p>
-        <p><b>Registered:</b> ${escapeHtml(formatRegistrationDate(account.createdAt))}</p>
-      </div>
-      <button class="removeRegisteredUserButton" type="button" onclick="deleteRegisteredUser('${escapeJsString(account.id)}')">Remove</button>
-    </div>
-  `).join("");
-}
-
-function deleteRegisteredUser(id){
-  if(!confirm("Remove this registered user from this device?")) return;
-
-  const accounts = getAccounts().filter(acc => acc.id !== id);
-  saveAccounts(accounts);
-
-  const currentUser = getCurrentUser();
-  if(currentUser && currentUser.id === id){
-    clearCurrentUser();
-  }
-
-  renderRegisteredUsers();
-}
-
-function renderSavedOrders(){
-  const orders = getSavedOrders().slice().sort((a, b) => String(b.submittedAt || "").localeCompare(String(a.submittedAt || "")));
-  $("savedOrderCount").textContent = `${orders.length} saved order${orders.length === 1 ? "" : "s"}`;
-
-  if(orders.length === 0){
-    $("savedOrderList").innerHTML = `<div class="emptyUserList">No saved orders on this device.</div>`;
-    return;
-  }
-
-  $("savedOrderList").innerHTML = orders.map(order => `
-    <div class="registeredUserCard savedOrderCard">
-      <div class="savedOrderDetails">
-        <h2>${escapeHtml(order.customerName || "Customer")} <span>${escapeHtml(formatRegistrationDate(order.submittedAt))}</span></h2>
-        <p><b>Total:</b> ${escapeHtml(order.totalOrder)} PCS</p>
-        <div class="savedOrderItems">
-          ${(order.items || []).map(item => `
-            <div class="savedOrderItem">
-              <b>${escapeHtml(item.brand)} ${escapeHtml(item.description)}</b>
-              <span>${escapeHtml(item.qty)} PCS</span>
-            </div>
-          `).join("")}
-        </div>
-        <details class="orderMetadata">
-          <summary>Order message</summary>
-          <pre>${escapeHtml(order.message || "")}</pre>
-        </details>
-      </div>
-      <button class="removeRegisteredUserButton" type="button" onclick="deleteSavedOrder('${escapeJsString(order.id)}')">Remove</button>
-    </div>
-  `).join("");
-}
-
-function deleteSavedOrder(id){
-  if(!confirm("Remove this saved order from this device?")) return;
-  saveSavedOrders(getSavedOrders().filter(order => order.id !== id));
-  renderSavedOrders();
 }
 
 function getProductSku(product){
@@ -1286,7 +1185,6 @@ function buildWhatsAppMessage(){
   const skus = getCartSkus();
   const lines = [];
 
-  lines.push("GR RACING SPORTS Order");
   lines.push(`Customer: ${customerName || customerUsername || "-"}`);
   lines.push(`Username: ${customerUsername || "-"}`);
   lines.push("");
@@ -1570,14 +1468,6 @@ function bindEvents(){
 
   $("topTapZone").addEventListener("click", goBackToTop);
 
-  $("refreshRegisteredUsersButton").addEventListener("click", renderRegisteredUsers);
-  $("openOrderListButton").addEventListener("click", showOrderListScreen);
-  $("backToCatalogueButton").addEventListener("click", showCatalogueScreen);
-
-  $("refreshOrderListButton").addEventListener("click", renderSavedOrders);
-  $("openRegisteredUsersButton").addEventListener("click", showRegisteredUsersScreen);
-  $("orderListBackButton").addEventListener("click", showCatalogueScreen);
-
   document.addEventListener("click", event => {
     if(!event.target.closest("#yearButton") && !event.target.closest("#yearDropdown")){
       $("yearDropdown").classList.add("hidden");
@@ -1592,16 +1482,6 @@ function boot(){
   loadProducts();
 
   setInterval(autoRefreshProducts, 60000);
-
-  if(isAccountManagerMode()){
-    showRegisteredUsersScreen();
-    return;
-  }
-
-  if(isOrderManagerMode()){
-    showOrderListScreen();
-    return;
-  }
 
   showCatalogueScreen();
 }
