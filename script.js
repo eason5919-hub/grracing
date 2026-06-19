@@ -5,7 +5,9 @@ let currentYearFilter = "";
 let currentSizeFilter = "";
 let customerName = "";
 let customerUsername = "";
-let passwordResetAccountId = "";
+let customerSessionId = "";
+let passwordResetToken = "";
+let sharedEventsSource = null;
 let branchNames = [];
 let branchSettingOpen = false;
 let branchSettingVisibleCount = 10;
@@ -17,11 +19,11 @@ let cardBySku = {};
 
 let latestProductsJsonText = "";
 let refreshLock = false;
-const APP_ASSET_VERSION = "202606192230";
+const APP_ASSET_VERSION = "202606192400";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 const BRANCH_NAMES_STORAGE_KEY = "tyreOneBranchNames";
-const CUSTOMER_ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
-const CUSTOMER_SESSION_STORAGE_KEY = "grRacingCurrentCustomer";
+const SHARED_SESSION_TOKEN_KEY = "grRacingSharedSessionToken";
+let customerSessionToken = localStorage.getItem(SHARED_SESSION_TOKEN_KEY) || "";
 const DEFAULT_BRANCH_SLOT_COUNT = 10;
 const BRANCH_SLOT_EXPAND_COUNT = 5;
 
@@ -1058,17 +1060,25 @@ function closeLogoutConfirm(){
   overlay.classList.add("hidden");
 }
 
-function performLogout(){
+async function performLogout(){
   closeLogoutConfirm();
+
+  try{
+    await apiRequest("/api/logout", { method:"POST" });
+  }catch(error){
+    console.warn(error.message);
+  }
 
   localStorage.removeItem("customerName");
   localStorage.removeItem("customerPhone");
-  localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  localStorage.removeItem(SHARED_SESSION_TOKEN_KEY);
   localStorage.removeItem(BRANCH_NAMES_STORAGE_KEY);
 
+  customerSessionToken = "";
+  customerSessionId = "";
   customerName = "";
   customerUsername = "";
-  passwordResetAccountId = "";
+  passwordResetToken = "";
   cart = {};
   branchNames = new Array(DEFAULT_BRANCH_SLOT_COUNT).fill("");
   branchSettingVisibleCount = DEFAULT_BRANCH_SLOT_COUNT;
@@ -1600,12 +1610,40 @@ function resetFiltersToAll(){
   currentSizeFilter = "";
 }
 
-function normalizeCustomerUsername(value){
-  return cleanValue(value).toLowerCase();
+function getDeviceInfo(){
+  const platform = navigator.userAgentData && navigator.userAgentData.platform
+    ? navigator.userAgentData.platform
+    : navigator.platform;
+  return `${platform || "Unknown platform"} | ${navigator.userAgent}`;
 }
 
-function normalizeSsmNumber(value){
-  return cleanValue(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+async function apiRequest(path, options = {}){
+  const headers = { ...(options.headers || {}) };
+  if(options.body && !headers["Content-Type"]){
+    headers["Content-Type"] = "application/json";
+  }
+  if(customerSessionToken){
+    headers.Authorization = `Bearer ${customerSessionToken}`;
+  }
+
+  let response;
+  try{
+    response = await fetch(path, { ...options, headers, cache:"no-store" });
+  }catch(error){
+    throw new Error("Cannot connect to the shared server. Keep the server window open and try again.");
+  }
+
+  let payload = {};
+  try{
+    payload = await response.json();
+  }catch(error){
+    payload = {};
+  }
+
+  if(!response.ok){
+    throw new Error(payload.error || "Shared server request failed.");
+  }
+  return payload;
 }
 
 function normalizeWhatsappNumber(value){
@@ -1616,35 +1654,12 @@ function isValidWhatsappNumber(value){
   return /^60\d{8,10}$/.test(normalizeWhatsappNumber(value));
 }
 
-function getCustomerAccounts(){
-  try{
-    const parsed = JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNTS_STORAGE_KEY) || "[]");
-    if(!Array.isArray(parsed)){
-      return [];
-    }
-
-    return parsed.map((account, index) => {
-      const usernameKey = account.usernameKey || normalizeCustomerUsername(account.username);
-
-      return {
-        ...account,
-        accountId: account.accountId || `legacy-${index}-${usernameKey}`,
-        usernameKey,
-        ssmKey: account.ssmKey || normalizeSsmNumber(account.ssmNumber),
-        whatsappNumber: normalizeWhatsappNumber(account.whatsappNumber)
-      };
-    });
-  }catch(error){
-    return [];
-  }
-}
-
-function saveCustomerAccounts(accounts){
-  localStorage.setItem(CUSTOMER_ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-}
-
 function isAccountManagerMode(){
   return new URLSearchParams(window.location.search).get("view") === "users";
+}
+
+function isOrderManagerMode(){
+  return new URLSearchParams(window.location.search).get("view") === "orders";
 }
 
 function formatRegistrationDate(value){
@@ -1656,11 +1671,21 @@ function formatRegistrationDate(value){
   return date.toLocaleString();
 }
 
-function renderRegisteredUsers(){
-  const accounts = getCustomerAccounts();
+async function renderRegisteredUsers(){
+  let accounts = [];
+  const list = document.getElementById("registeredUserList");
+
+  try{
+    const payload = await apiRequest("/api/accounts");
+    accounts = payload.accounts || [];
+  }catch(error){
+    document.getElementById("registeredUserCount").textContent = "Unable to load users";
+    list.innerHTML = `<div class="emptyUserList">${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
   const count = accounts.length;
   const countBox = document.getElementById("registeredUserCount");
-  const list = document.getElementById("registeredUserList");
 
   countBox.textContent = `${count} registered user${count === 1 ? "" : "s"}`;
 
@@ -1678,7 +1703,7 @@ function renderRegisteredUsers(){
         <p><b>WhatsApp:</b> ${escapeHtml(account.whatsappNumber || "Not registered")}</p>
         <p><b>Registered:</b> ${escapeHtml(formatRegistrationDate(account.createdAt))}</p>
       </div>
-      <button class="removeRegisteredUserButton" type="button" data-account-id="${escapeHtml(account.accountId)}">Remove</button>
+      <button class="removeRegisteredUserButton" type="button" data-account-id="${escapeHtml(account.id)}">Remove</button>
     </article>
   `).join("");
 
@@ -1687,27 +1712,21 @@ function renderRegisteredUsers(){
   });
 }
 
-function removeRegisteredUser(accountId){
-  const accounts = getCustomerAccounts();
-  const account = accounts.find(item => item.accountId === accountId);
-  if(!account) return;
-
+async function removeRegisteredUser(accountId){
+  const button = document.querySelector(`[data-account-id="${cssEscapeValue(accountId)}"]`);
+  const card = button ? button.closest(".registeredUserCard") : null;
+  const companyName = card ? card.querySelector("h2").textContent : "this user";
   const confirmed = window.confirm(
-    `Remove registered user ${account.companyName} (${account.username})?`
+    `Remove registered user ${companyName}?`
   );
   if(!confirmed) return;
 
-  saveCustomerAccounts(accounts.filter(item => item.accountId !== accountId));
-
-  const savedSessionValue = cleanValue(localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY));
-  if(
-    savedSessionValue === accountId ||
-    normalizeCustomerUsername(savedSessionValue) === account.usernameKey
-  ){
-    localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  try{
+    await apiRequest(`/api/accounts/${encodeURIComponent(accountId)}`, { method:"DELETE" });
+    await renderRegisteredUsers();
+  }catch(error){
+    alert(error.message);
   }
-
-  renderRegisteredUsers();
 }
 
 function initializeAccountManager(){
@@ -1715,24 +1734,70 @@ function initializeAccountManager(){
   document.getElementById("appShell").classList.add("hidden");
   document.getElementById("accountManagerScreen").classList.remove("hidden");
   renderRegisteredUsers();
+
+  sharedEventsSource = new EventSource("/api/events");
+  sharedEventsSource.addEventListener("accounts", () => renderRegisteredUsers());
 }
 
-function createPasswordSalt(){
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+function getOrderItemsHtml(order){
+  return (order.items || []).map(item => {
+    const branches = Object.entries(item.branches || {})
+      .map(([name, qty]) => `${escapeHtml(name)}: ${escapeHtml(qty)} PCS`)
+      .join(" | ");
+
+    return `
+      <div class="savedOrderItem">
+        <b>${escapeHtml(item.brand)} ${escapeHtml(item.description)}</b>
+        <span>${escapeHtml(item.quantity)} PCS${branches ? ` | ${branches}` : ""}</span>
+      </div>
+    `;
+  }).join("");
 }
 
-function createCustomerAccountId(){
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+async function renderSavedOrders(){
+  const countBox = document.getElementById("savedOrderCount");
+  const list = document.getElementById("savedOrderList");
+
+  try{
+    const payload = await apiRequest("/api/orders");
+    const orders = payload.orders || [];
+    countBox.textContent = `${orders.length} saved order${orders.length === 1 ? "" : "s"}`;
+
+    if(orders.length === 0){
+      list.innerHTML = '<div class="emptyUserList">No submitted orders yet.</div>';
+      return;
+    }
+
+    list.innerHTML = orders.map(order => `
+      <article class="registeredUserCard savedOrderCard">
+        <div class="registeredUserDetails savedOrderDetails">
+          <h2>${escapeHtml(order.customerName)} <span>@${escapeHtml(order.username)}</span></h2>
+          <p><b>Submitted:</b> ${escapeHtml(formatRegistrationDate(order.submittedAt))}</p>
+          <p><b>Total:</b> ${escapeHtml(order.totalOrder)} PCS</p>
+          <div class="savedOrderItems">${getOrderItemsHtml(order)}</div>
+          <details class="orderMetadata">
+            <summary>Device / Session</summary>
+            <p><b>Device:</b> ${escapeHtml(order.deviceInfo)}</p>
+            <p><b>Session:</b> ${escapeHtml(order.sessionId)}</p>
+            <p><b>Order ID:</b> ${escapeHtml(order.id)}</p>
+          </details>
+        </div>
+      </article>
+    `).join("");
+  }catch(error){
+    countBox.textContent = "Unable to load orders";
+    list.innerHTML = `<div class="emptyUserList">${escapeHtml(error.message)}</div>`;
+  }
 }
 
-async function hashCustomerPassword(password, salt){
-  const data = new TextEncoder().encode(`${salt}:${password}`);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+function initializeOrderManager(){
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("appShell").classList.add("hidden");
+  document.getElementById("orderListScreen").classList.remove("hidden");
+  renderSavedOrders();
+
+  sharedEventsSource = new EventSource("/api/events");
+  sharedEventsSource.addEventListener("orders", () => renderSavedOrders());
 }
 
 function clearLoginMessages(){
@@ -1754,7 +1819,7 @@ function showLoginView(message){
   hideAccountViews();
   document.getElementById("loginView").classList.remove("hidden");
   clearLoginMessages();
-  passwordResetAccountId = "";
+  passwordResetToken = "";
   document.getElementById("loginStatus").textContent = message || "";
 }
 
@@ -1771,23 +1836,25 @@ function showForgotPasswordView(){
   document.getElementById("forgotPasswordView").classList.remove("hidden");
   document.getElementById("forgotPasswordForm").reset();
   clearLoginMessages();
-  passwordResetAccountId = "";
+  passwordResetToken = "";
   document.getElementById("forgotSsmNumber").focus();
 }
 
-function showResetPasswordView(accountId){
+function showResetPasswordView(resetToken){
   hideAccountViews();
   document.getElementById("resetPasswordView").classList.remove("hidden");
   document.getElementById("resetPasswordForm").reset();
   clearLoginMessages();
-  passwordResetAccountId = accountId;
+  passwordResetToken = resetToken;
   document.getElementById("resetPassword").focus();
 }
 
-function startCustomerSession(account){
+function startCustomerSession(account, token, sessionId){
   customerName = account.companyName;
   customerUsername = account.username;
-  localStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, account.accountId);
+  customerSessionToken = token || customerSessionToken;
+  customerSessionId = sessionId || customerSessionId;
+  localStorage.setItem(SHARED_SESSION_TOKEN_KEY, customerSessionToken);
 
   resetFiltersToAll();
   resetBarsToLeft();
@@ -1806,20 +1873,25 @@ function startCustomerSession(account){
   renderAndStayTop();
 }
 
-function checkLogin(){
-  const savedSessionValue = cleanValue(localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY));
-  const accounts = getCustomerAccounts();
-  const account = accounts.find(item => item.accountId === savedSessionValue) ||
-    accounts.find(item => item.usernameKey === normalizeCustomerUsername(savedSessionValue));
-
-  if(account){
-    customerName = account.companyName;
-    customerUsername = account.username;
-    localStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, account.accountId);
-    document.getElementById("loginScreen").classList.add("hidden");
-  }else{
-    localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+async function checkLogin(){
+  if(!customerSessionToken){
     showLoginView();
+    document.getElementById("loginScreen").classList.remove("hidden");
+    return;
+  }
+
+  try{
+    const payload = await apiRequest("/api/session");
+    customerName = payload.account.companyName;
+    customerUsername = payload.account.username;
+    customerSessionId = payload.sessionId;
+    document.getElementById("loginScreen").classList.add("hidden");
+  }catch(error){
+    customerSessionToken = "";
+    customerSessionId = "";
+    localStorage.removeItem(SHARED_SESSION_TOKEN_KEY);
+    showLoginView();
+    document.getElementById("loginError").textContent = error.message;
     document.getElementById("loginScreen").classList.remove("hidden");
   }
 }
@@ -1833,6 +1905,16 @@ document.getElementById("refreshRegisteredUsersButton").onclick = renderRegister
 document.getElementById("backToCatalogueButton").onclick = () => {
   window.location.href = "index.html";
 };
+document.getElementById("openOrderListButton").onclick = () => {
+  window.location.href = "index.html?view=orders";
+};
+document.getElementById("refreshOrderListButton").onclick = renderSavedOrders;
+document.getElementById("openRegisteredUsersButton").onclick = () => {
+  window.location.href = "index.html?view=users";
+};
+document.getElementById("orderListBackButton").onclick = () => {
+  window.location.href = "index.html";
+};
 
 document.getElementById("signupForm").addEventListener("submit", async event => {
   event.preventDefault();
@@ -1840,17 +1922,15 @@ document.getElementById("signupForm").addEventListener("submit", async event => 
 
   const companyName = cleanValue(document.getElementById("signupCompanyName").value);
   const ssmNumber = cleanValue(document.getElementById("signupSsmNumber").value);
-  const ssmKey = normalizeSsmNumber(ssmNumber);
   const whatsappNumber = normalizeWhatsappNumber(
     document.getElementById("signupWhatsappNumber").value
   );
   const username = cleanValue(document.getElementById("signupUsername").value);
-  const usernameKey = normalizeCustomerUsername(username);
   const password = document.getElementById("signupPassword").value;
   const confirmPassword = document.getElementById("signupConfirmPassword").value;
   const signupError = document.getElementById("signupError");
 
-  if(!companyName || !ssmKey || !whatsappNumber || !username || !password || !confirmPassword){
+  if(!companyName || !ssmNumber || !whatsappNumber || !username || !password || !confirmPassword){
     signupError.textContent = "Please complete every field.";
     return;
   }
@@ -1865,33 +1945,15 @@ document.getElementById("signupForm").addEventListener("submit", async event => 
     return;
   }
 
-  const accounts = getCustomerAccounts();
-  if(accounts.some(account => account.usernameKey === usernameKey)){
-    signupError.textContent = "This username is already registered.";
+  try{
+    await apiRequest("/api/signup", {
+      method:"POST",
+      body:JSON.stringify({ companyName, ssmNumber, whatsappNumber, username, password })
+    });
+  }catch(error){
+    signupError.textContent = error.message;
     return;
   }
-
-  if(accounts.some(account => account.whatsappNumber === whatsappNumber)){
-    signupError.textContent = "This WhatsApp number is already registered.";
-    return;
-  }
-
-  const salt = createPasswordSalt();
-  const passwordHash = await hashCustomerPassword(password, salt);
-
-  accounts.push({
-    accountId: createCustomerAccountId(),
-    companyName,
-    ssmNumber,
-    ssmKey,
-    whatsappNumber,
-    username,
-    usernameKey,
-    passwordSalt: salt,
-    passwordHash,
-    createdAt: new Date().toISOString()
-  });
-  saveCustomerAccounts(accounts);
 
   document.getElementById("signupForm").reset();
   document.getElementById("loginUsername").value = username;
@@ -1899,17 +1961,17 @@ document.getElementById("signupForm").addEventListener("submit", async event => 
   showLoginView("Sign up confirmed. You can now log in.");
 });
 
-document.getElementById("forgotPasswordForm").addEventListener("submit", event => {
+document.getElementById("forgotPasswordForm").addEventListener("submit", async event => {
   event.preventDefault();
   clearLoginMessages();
 
-  const ssmKey = normalizeSsmNumber(document.getElementById("forgotSsmNumber").value);
+  const ssmNumber = cleanValue(document.getElementById("forgotSsmNumber").value);
   const whatsappNumber = normalizeWhatsappNumber(
     document.getElementById("forgotWhatsappNumber").value
   );
   const forgotPasswordError = document.getElementById("forgotPasswordError");
 
-  if(!ssmKey || !whatsappNumber){
+  if(!ssmNumber || !whatsappNumber){
     forgotPasswordError.textContent = "Please enter SSM number and registered WhatsApp number.";
     return;
   }
@@ -1919,16 +1981,16 @@ document.getElementById("forgotPasswordForm").addEventListener("submit", event =
     return;
   }
 
-  const account = getCustomerAccounts().find(item =>
-    item.ssmKey === ssmKey && item.whatsappNumber === whatsappNumber
-  );
-
-  if(!account){
-    forgotPasswordError.textContent = "SSM number and registered WhatsApp number do not match.";
+  try{
+    const payload = await apiRequest("/api/forgot/verify", {
+      method:"POST",
+      body:JSON.stringify({ ssmNumber, whatsappNumber })
+    });
+    showResetPasswordView(payload.resetToken);
+  }catch(error){
+    forgotPasswordError.textContent = error.message;
     return;
   }
-
-  showResetPasswordView(account.accountId);
 });
 
 document.getElementById("resetPasswordForm").addEventListener("submit", async event => {
@@ -1949,20 +2011,18 @@ document.getElementById("resetPasswordForm").addEventListener("submit", async ev
     return;
   }
 
-  const accounts = getCustomerAccounts();
-  const accountIndex = accounts.findIndex(account => account.accountId === passwordResetAccountId);
-
-  if(accountIndex < 0){
-    showLoginView("Password reset could not be completed. Please try again.");
+  let username = "";
+  try{
+    const payload = await apiRequest("/api/forgot/reset", {
+      method:"POST",
+      body:JSON.stringify({ resetToken:passwordResetToken, password })
+    });
+    username = payload.username;
+  }catch(error){
+    resetPasswordError.textContent = error.message;
     return;
   }
 
-  const salt = createPasswordSalt();
-  accounts[accountIndex].passwordSalt = salt;
-  accounts[accountIndex].passwordHash = await hashCustomerPassword(password, salt);
-  saveCustomerAccounts(accounts);
-
-  const username = accounts[accountIndex].username;
   document.getElementById("loginUsername").value = username;
   document.getElementById("loginPassword").value = "";
   showLoginView("Password reset confirmed. You can now log in.");
@@ -1972,41 +2032,28 @@ document.getElementById("loginForm").addEventListener("submit", async event => {
   event.preventDefault();
   clearLoginMessages();
 
-  const usernameKey = normalizeCustomerUsername(document.getElementById("loginUsername").value);
+  const username = cleanValue(document.getElementById("loginUsername").value);
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
 
-  if(!usernameKey || !password){
+  if(!username || !password){
     loginError.textContent = "Please enter username and password.";
     return;
   }
 
-  const matchingAccounts = getCustomerAccounts()
-    .filter(item => item.usernameKey === usernameKey)
-    .reverse();
-
-  if(matchingAccounts.length === 0){
-    loginError.textContent = "Username or password is incorrect.";
-    return;
-  }
-
-  let account = null;
-
-  for(const candidate of matchingAccounts){
-    const passwordHash = await hashCustomerPassword(password, candidate.passwordSalt);
-    if(passwordHash === candidate.passwordHash){
-      account = candidate;
-      break;
-    }
-  }
-
-  if(!account){
-    loginError.textContent = "Username or password is incorrect.";
+  let payload;
+  try{
+    payload = await apiRequest("/api/login", {
+      method:"POST",
+      body:JSON.stringify({ username, password, deviceInfo:getDeviceInfo() })
+    });
+  }catch(error){
+    loginError.textContent = error.message;
     return;
   }
 
   document.getElementById("loginPassword").value = "";
-  startCustomerSession(account);
+  startCustomerSession(payload.account, payload.token, payload.sessionId);
 });
 
 document.getElementById('logoutButton').onclick = () => {
@@ -2786,7 +2833,7 @@ if(branchSettingButton){
   });
 }
 
-document.getElementById('sendWhatsapp').onclick = () => {
+document.getElementById('sendWhatsapp').onclick = async () => {
   if(!customerName){
     alert("Please log in before sending an order.");
     return;
@@ -2798,6 +2845,7 @@ document.getElementById('sendWhatsapp').onclick = () => {
   }
 
   let totalOrder = 0;
+  const orderItems = [];
   const lines = [
     `Customer: ${customerName}`,
     `Username: ${customerUsername}`,
@@ -2826,13 +2874,30 @@ document.getElementById('sendWhatsapp').onclick = () => {
     lines.push(`Description: ${description}`);
 
     if(branchUsed){
+      const branchQuantities = {};
       Object.entries(item.branches)
         .filter(([, qty]) => Number(qty) > 0)
         .forEach(([name, qty]) => {
           lines.push(`${name}: ${qty} PCS`);
+          branchQuantities[name] = Number(qty);
         });
+
+      orderItems.push({
+        sku,
+        brand:brandUsed,
+        description,
+        quantity:item.qty,
+        branches:branchQuantities
+      });
     }else{
       lines.push(`Order Qty (Pcs): ${item.qty}`);
+      orderItems.push({
+        sku,
+        brand:brandUsed,
+        description,
+        quantity:item.qty,
+        branches:{}
+      });
     }
 
     lines.push("");
@@ -2840,10 +2905,31 @@ document.getElementById('sendWhatsapp').onclick = () => {
 
   lines.push(`TOTAL ORDER: ${totalOrder} PCS`);
 
-  window.open(
-    `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`,
-    '_blank'
-  );
+  const whatsappUrl =
+    `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+  const whatsappWindow = window.open("about:blank", "_blank");
+
+  try{
+    await apiRequest("/api/orders", {
+      method:"POST",
+      body:JSON.stringify({
+        items:orderItems,
+        totalOrder,
+        message:lines.join("\n"),
+        deviceInfo:getDeviceInfo()
+      })
+    });
+  }catch(error){
+    if(whatsappWindow) whatsappWindow.close();
+    alert(`Order was not submitted: ${error.message}`);
+    return;
+  }
+
+  if(whatsappWindow){
+    whatsappWindow.location.replace(whatsappUrl);
+  }else{
+    window.open(whatsappUrl, "_blank");
+  }
 
   const oldCartSkus = Object.keys(cart);
 
@@ -2978,7 +3064,9 @@ document.addEventListener('touchend', function(event){
   lastTouchEndTime = now;
 }, { passive:false });
 
-if(isAccountManagerMode()){
+if(isOrderManagerMode()){
+  initializeOrderManager();
+}else if(isAccountManagerMode()){
   initializeAccountManager();
 }else{
   checkLogin();
@@ -2992,6 +3080,11 @@ if(isAccountManagerMode()){
 }
 
 window.addEventListener('pageshow', function(){
+  if(isOrderManagerMode()){
+    renderSavedOrders();
+    return;
+  }
+
   if(isAccountManagerMode()){
     renderRegisteredUsers();
     return;

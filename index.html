@@ -5,10 +5,29 @@
 
   <!-- FORCE EVERYONE TO LATEST VERSION -->
   <script>
-    const APP_VERSION = "202606192230";
+    const APP_VERSION = "202606192400";
     const url = new URL(window.location.href);
 
-    if (url.searchParams.get("v") !== APP_VERSION) {
+    if (window.location.protocol === "file:") {
+      const sharedUrl = new URL("http://localhost:8787/");
+      sharedUrl.search = url.search;
+      sharedUrl.searchParams.set("v", APP_VERSION);
+
+      let localAccounts = [];
+      try {
+        localAccounts = JSON.parse(localStorage.getItem("grRacingCustomerAccounts") || "[]");
+      } catch (error) {
+        localAccounts = [];
+      }
+
+      fetch("http://localhost:8787/api/import-local-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accounts: Array.isArray(localAccounts) ? localAccounts : [] })
+      }).finally(() => window.location.replace(sharedUrl.toString()));
+    }
+
+    else if (url.searchParams.get("v") !== APP_VERSION) {
       url.searchParams.set("v", APP_VERSION);
       window.location.replace(url.toString());
     }
@@ -26,8 +45,8 @@
   <meta name="theme-color" content="#101b26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="GR RACING SPORTS">
-  <link rel="manifest" href="manifest.webmanifest?v=202606192230">
-  <link rel="stylesheet" href="style.css?v=202606192230">
+  <link rel="manifest" href="manifest.webmanifest?v=202606192400">
+  <link rel="stylesheet" href="style.css?v=202606192400">
 </head>
 
 <body>
@@ -43,10 +62,26 @@
       </div>
       <div class="accountManagerActions">
         <button id="refreshRegisteredUsersButton" type="button">Refresh</button>
+        <button id="openOrderListButton" type="button">Order List</button>
         <button id="backToCatalogueButton" class="secondaryButton" type="button">Back To Catalogue</button>
       </div>
     </div>
     <div id="registeredUserList" class="registeredUserList"></div>
+  </div>
+
+  <div id="orderListScreen" class="accountManagerScreen hidden">
+    <div class="accountManagerHeader">
+      <div>
+        <h1>Order List</h1>
+        <p id="savedOrderCount">0 saved orders</p>
+      </div>
+      <div class="accountManagerActions">
+        <button id="refreshOrderListButton" type="button">Refresh</button>
+        <button id="openRegisteredUsersButton" type="button">Registered Users</button>
+        <button id="orderListBackButton" class="secondaryButton" type="button">Back To Catalogue</button>
+      </div>
+    </div>
+    <div id="savedOrderList" class="registeredUserList"></div>
   </div>
 
   <div id="loginScreen" class="loginScreen">
@@ -300,7 +335,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=202606192230"></script>
+  <script src="script.js?v=202606192400"></script>
 
 </body>
 </html>

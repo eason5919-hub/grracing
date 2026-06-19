@@ -603,6 +603,50 @@ select{
   color:var(--navy-soft);
 }
 
+.savedOrderCard{
+  align-items:stretch;
+}
+
+.savedOrderDetails{
+  width:100%;
+}
+
+.savedOrderDetails h2 span{
+  color:var(--slate);
+  font-size:15px;
+}
+
+.savedOrderItems{
+  display:grid;
+  gap:7px;
+  margin:14px 0;
+}
+
+.savedOrderItem{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  padding:9px 10px;
+  border-left:3px solid var(--gold);
+  background:#fffdf7;
+}
+
+.savedOrderItem span{
+  color:var(--slate);
+  text-align:right;
+}
+
+.orderMetadata{
+  margin-top:12px;
+  color:var(--slate);
+  font-size:12px;
+}
+
+.orderMetadata summary{
+  cursor:pointer;
+  font-weight:800;
+}
+
 .removeRegisteredUserButton{
   flex:0 0 auto;
   background:var(--danger);
@@ -843,6 +887,16 @@ select{
 
   .removeRegisteredUserButton{
     width:100%;
+  }
+
+  .savedOrderItem{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:4px;
+  }
+
+  .savedOrderItem span{
+    text-align:left;
   }
 
   .headerName{
