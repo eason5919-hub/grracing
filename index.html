@@ -3,34 +3,43 @@
 <head>
   <meta charset="UTF-8">
 
-  <!-- FORCE EVERYONE TO LATEST VERSION -->
+  <!-- FORCE UPDATE FOR PC / PHONE / WEB / INSTALLED APP -->
   <script>
-    const APP_VERSION = "202606192400";
+    const APP_VERSION = "1002"; // NEXT UPDATE CHANGE TO 1003, THEN 1004
+    const VERSION_KEY = "grRacingAppVersion";
     const url = new URL(window.location.href);
 
-    if (window.location.protocol === "file:") {
-      const sharedUrl = new URL("http://localhost:8787/");
-      sharedUrl.search = url.search;
-      sharedUrl.searchParams.set("v", APP_VERSION);
-
-      let localAccounts = [];
+    async function clearOldCache() {
       try {
-        localAccounts = JSON.parse(localStorage.getItem("grRacingCustomerAccounts") || "[]");
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(key => caches.delete(key)));
+        }
+
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(reg => reg.unregister()));
+        }
       } catch (error) {
-        localAccounts = [];
+        console.log("Cache clear skipped:", error);
+      }
+    }
+
+    async function forceLatestVersion() {
+      const oldVersion = localStorage.getItem(VERSION_KEY);
+
+      if (oldVersion !== APP_VERSION) {
+        localStorage.setItem(VERSION_KEY, APP_VERSION);
+        await clearOldCache();
       }
 
-      fetch("http://localhost:8787/api/import-local-accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accounts: Array.isArray(localAccounts) ? localAccounts : [] })
-      }).finally(() => window.location.replace(sharedUrl.toString()));
+      if (url.searchParams.get("v") !== APP_VERSION) {
+        url.searchParams.set("v", APP_VERSION);
+        window.location.replace(url.toString());
+      }
     }
 
-    else if (url.searchParams.get("v") !== APP_VERSION) {
-      url.searchParams.set("v", APP_VERSION);
-      window.location.replace(url.toString());
-    }
+    forceLatestVersion();
   </script>
 
   <!-- PREVENT IPHONE AUTO ZOOM -->
@@ -45,47 +54,56 @@
   <meta name="theme-color" content="#101b26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="GR RACING SPORTS">
-  <link rel="manifest" href="manifest.webmanifest?v=202606192400">
-  <link rel="stylesheet" href="style.css?v=202606192400">
+
+  <link rel="manifest" href="manifest.webmanifest?v=1002">
+  <link rel="stylesheet" href="style.css?v=1002">
 </head>
 
 <body>
-
   <!-- TAP VERY TOP OF SCREEN TO GO BACK TOP -->
   <div id="topTapZone"></div>
 
+  <!-- REGISTERED USERS SCREEN -->
   <div id="accountManagerScreen" class="accountManagerScreen hidden">
     <div class="accountManagerHeader">
       <div>
         <h1>Registered Users</h1>
         <p id="registeredUserCount">0 registered users</p>
       </div>
+
       <div class="accountManagerActions">
         <button id="refreshRegisteredUsersButton" type="button">Refresh</button>
         <button id="openOrderListButton" type="button">Order List</button>
         <button id="backToCatalogueButton" class="secondaryButton" type="button">Back To Catalogue</button>
       </div>
     </div>
+
     <div id="registeredUserList" class="registeredUserList"></div>
   </div>
 
+  <!-- ORDER LIST SCREEN -->
   <div id="orderListScreen" class="accountManagerScreen hidden">
     <div class="accountManagerHeader">
       <div>
         <h1>Order List</h1>
         <p id="savedOrderCount">0 saved orders</p>
       </div>
+
       <div class="accountManagerActions">
         <button id="refreshOrderListButton" type="button">Refresh</button>
         <button id="openRegisteredUsersButton" type="button">Registered Users</button>
         <button id="orderListBackButton" class="secondaryButton" type="button">Back To Catalogue</button>
       </div>
     </div>
+
     <div id="savedOrderList" class="registeredUserList"></div>
   </div>
 
+  <!-- LOGIN SCREEN -->
   <div id="loginScreen" class="loginScreen">
     <div class="loginBox">
+
+      <!-- LOGIN VIEW -->
       <div id="loginView">
         <h2>Welcome to GR RACING</h2>
         <p>Enter username and password</p>
@@ -109,6 +127,7 @@
         <small id="loginStatus" class="formMessage successMessage"></small>
       </div>
 
+      <!-- SIGN UP VIEW -->
       <div id="signupView" class="hidden">
         <h2>Sign Up</h2>
         <p>Create your GR RACING customer account</p>
@@ -141,6 +160,7 @@
         <small id="signupError" class="formMessage errorMessage"></small>
       </div>
 
+      <!-- FORGOT PASSWORD VIEW -->
       <div id="forgotPasswordView" class="hidden">
         <h2>Forgot Password</h2>
         <p>Verify your registered account details</p>
@@ -161,6 +181,7 @@
         <small id="forgotPasswordError" class="formMessage errorMessage"></small>
       </div>
 
+      <!-- RESET PASSWORD VIEW -->
       <div id="resetPasswordView" class="hidden">
         <h2>Reset Password</h2>
         <p>Enter and confirm your new password</p>
@@ -180,126 +201,130 @@
 
         <small id="resetPasswordError" class="formMessage errorMessage"></small>
       </div>
+
     </div>
   </div>
 
+  <!-- MAIN APP -->
   <div id="appShell" class="appShell">
 
     <header id="mainHeader">
       <div class="topBar">
         <h1 class="headerName">GR RACING SPORTS SDN. BHD.</h1>
 
-        <button id="refreshAppButton" title="Refresh App">
+        <button id="refreshAppButton" title="Refresh App" type="button">
           Refresh
         </button>
       </div>
 
       <div class="searchBox">
         <input type="text" id="search" placeholder="Search tyre...">
-        <button id="clearSearchButton" class="hidden" title="Clear Search">X</button>
+        <button id="clearSearchButton" class="hidden" title="Clear Search" type="button">X</button>
       </div>
 
       <div class="headerActionRow">
-        <button id="logoutButton">Logout</button>
+        <button id="logoutButton" type="button">Logout</button>
 
         <div class="yearBox">
-          <button id="yearButton" onclick="showYearDropdown(event)">YEAR</button>
+          <button id="yearButton" onclick="showYearDropdown(event)" type="button">YEAR</button>
         </div>
 
         <div class="pcdMenu">
-          <button onclick="showSize('R12')">R12</button>
-          <button onclick="showSize('R13')">R13</button>
-          <button onclick="showSize('R14')">R14</button>
-          <button onclick="showSize('R15')">R15</button>
-          <button onclick="showSize('R16')">R16</button>
-          <button onclick="showSize('R17')">R17</button>
-          <button onclick="showSize('R18')">R18</button>
-          <button onclick="showSize('R19')">R19</button>
-          <button onclick="showSize('R20')">R20</button>
-          <button onclick="showSize('R21')">R21</button>
-          <button onclick="showSize('R22')">R22</button>
+          <button onclick="showSize('R12')" type="button">R12</button>
+          <button onclick="showSize('R13')" type="button">R13</button>
+          <button onclick="showSize('R14')" type="button">R14</button>
+          <button onclick="showSize('R15')" type="button">R15</button>
+          <button onclick="showSize('R16')" type="button">R16</button>
+          <button onclick="showSize('R17')" type="button">R17</button>
+          <button onclick="showSize('R18')" type="button">R18</button>
+          <button onclick="showSize('R19')" type="button">R19</button>
+          <button onclick="showSize('R20')" type="button">R20</button>
+          <button onclick="showSize('R21')" type="button">R21</button>
+          <button onclick="showSize('R22')" type="button">R22</button>
         </div>
       </div>
 
-      <button id="cartButton">
+      <button id="cartButton" type="button">
         Cart (<span id="cartCount">0</span>)
       </button>
     </header>
 
+    <!-- YEAR DROPDOWN -->
     <div id="yearDropdown" class="yearDropdown hidden">
-      <button onclick="clearYear()">ALL YEAR</button>
-      <button onclick="showYear('Y20')">Y20</button>
-      <button onclick="showYear('Y21')">Y21</button>
-      <button onclick="showYear('Y22')">Y22</button>
-      <button onclick="showYear('Y23')">Y23</button>
-      <button onclick="showYear('Y24')">Y24</button>
-      <button onclick="showYear('Y25')">Y25</button>
-      <button onclick="showYear('Y26')">Y26</button>
+      <button onclick="clearYear()" type="button">ALL YEAR</button>
+      <button onclick="showYear('Y20')" type="button">Y20</button>
+      <button onclick="showYear('Y21')" type="button">Y21</button>
+      <button onclick="showYear('Y22')" type="button">Y22</button>
+      <button onclick="showYear('Y23')" type="button">Y23</button>
+      <button onclick="showYear('Y24')" type="button">Y24</button>
+      <button onclick="showYear('Y25')" type="button">Y25</button>
+      <button onclick="showYear('Y26')" type="button">Y26</button>
     </div>
 
+    <!-- BRAND CATEGORY BAR -->
     <div id="brandCategoryBar" class="categoryMenu">
-      <button class="brandCategoryButton textCategoryButton" data-category="ALL" onclick="showCategory('ALL')">
+      <button class="brandCategoryButton textCategoryButton" data-category="ALL" onclick="showCategory('ALL')" type="button">
         ALL
       </button>
 
-      <button class="brandCategoryButton" data-category="APLUS VIETNAM" onclick="showCategory('APLUS VIETNAM')">
-        <img src="aplus-vietnam-logo.jpg?v=202606162610" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="APLUS VIETNAM" onclick="showCategory('APLUS VIETNAM')" type="button">
+        <img src="aplus-vietnam-logo.jpg?v=1002" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
         <span>APLUS VIETNAM</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="APLUS" onclick="showCategory('APLUS')">
-        <img src="aplus-logo.jpg?v=202606162610" alt="APLUS" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="APLUS" onclick="showCategory('APLUS')" type="button">
+        <img src="aplus-logo.jpg?v=1002" alt="APLUS" onerror="brandLogoMissing(this)">
         <span>APLUS</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="ROCKBLADE" onclick="showCategory('ROCKBLADE')">
-        <img src="rockblade-logo.jpg?v=202606162610" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="ROCKBLADE" onclick="showCategory('ROCKBLADE')" type="button">
+        <img src="rockblade-logo.jpg?v=1002" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
         <span>ROCKBLADE</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="HILO" onclick="showCategory('HILO')">
-        <img src="hilo-logo.jpg?v=202606162610" alt="HILO" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="HILO" onclick="showCategory('HILO')" type="button">
+        <img src="hilo-logo.jpg?v=1002" alt="HILO" onerror="brandLogoMissing(this)">
         <span>HILO</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="ARDENT" onclick="showCategory('ARDENT')">
-        <img src="ardent-logo.jpg?v=202606162610" alt="ARDENT" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="ARDENT" onclick="showCategory('ARDENT')" type="button">
+        <img src="ardent-logo.jpg?v=1002" alt="ARDENT" onerror="brandLogoMissing(this)">
         <span>ARDENT</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="RAUFFAN" onclick="showCategory('RAUFFAN')">
-        <img src="rauffan-logo.jpg?v=202606162610" alt="RAUFFAN" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="RAUFFAN" onclick="showCategory('RAUFFAN')" type="button">
+        <img src="rauffan-logo.jpg?v=1002" alt="RAUFFAN" onerror="brandLogoMissing(this)">
         <span>RAUFFAN</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="CROSSMAXX" onclick="showCategory('CROSSMAXX')">
-        <img src="crossmaxx-logo.jpg?v=202606162610" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="CROSSMAXX" onclick="showCategory('CROSSMAXX')" type="button">
+        <img src="crossmaxx-logo.jpg?v=1002" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
         <span>CROSSMAXX</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="NEOLIN" onclick="showCategory('NEOLIN')">
-        <img src="neolin-logo.jpg?v=202606162610" alt="NEOLIN" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="NEOLIN" onclick="showCategory('NEOLIN')" type="button">
+        <img src="neolin-logo.jpg?v=1002" alt="NEOLIN" onerror="brandLogoMissing(this)">
         <span>NEOLIN</span>
       </button>
 
-      <button class="brandCategoryButton" data-category="ROTALLA" onclick="showCategory('ROTALLA')">
-        <img src="rotalla-logo.jpg?v=202606162610" alt="ROTALLA" onerror="brandLogoMissing(this)">
+      <button class="brandCategoryButton" data-category="ROTALLA" onclick="showCategory('ROTALLA')" type="button">
+        <img src="rotalla-logo.jpg?v=1002" alt="ROTALLA" onerror="brandLogoMissing(this)">
         <span>ROTALLA</span>
       </button>
 
-      <button class="brandCategoryButton textCategoryButton" data-category="OTHERS" onclick="showCategory('OTHERS')">
+      <button class="brandCategoryButton textCategoryButton" data-category="OTHERS" onclick="showCategory('OTHERS')" type="button">
         OTHERS
       </button>
     </div>
 
-    <div id="productGrid" class="grid"></div>
-
+    <main id="productGrid" class="grid"></main>
   </div>
 
+  <!-- CART PANEL -->
   <div id="cartPanel" class="hidden">
     <div class="cartHeader">
-      <h2>Your Cart</h2>
-      <button id="closeCart">X</button>
+      <h2>Cart</h2>
+      <button id="closeCart" type="button">X</button>
     </div>
 
     <button id="branchSettingButton" type="button">Branch Setting</button>
@@ -307,35 +332,31 @@
 
     <div id="cartItems"></div>
 
-    <button id="sendWhatsapp">Send To WhatsApp</button>
+    <button id="sendWhatsapp" type="button">Send WhatsApp Order</button>
   </div>
 
-  <div id="photoViewer" class="hidden photoViewer">
-    <div class="photoViewerBox">
-      <button class="closeViewer" onclick="closePhotoViewer()">X</button>
-
-      <h3 id="viewerTitle">Photo</h3>
-
-      <img id="viewerImage" src="">
-
-      <div class="viewerButtons">
-        <button onclick="closePhotoViewer()">Close</button>
-      </div>
+  <!-- PHOTO VIEWER -->
+  <div id="photoViewer" class="photoViewer hidden" onclick="closePhotoViewer()">
+    <div class="photoViewerBox" onclick="event.stopPropagation()">
+      <button class="photoViewerClose" onclick="closePhotoViewer()" type="button">X</button>
+      <h3 id="viewerTitle"></h3>
+      <img id="viewerImage" src="" alt="Product photo">
     </div>
   </div>
 
-  <div id="logoutConfirmOverlay" class="hidden confirmOverlay">
-    <div class="confirmBox" onclick="event.stopPropagation()">
-      <h3>Confirm Logout / 确认登出</h3>
-      <p>Are you sure you want to log out? All current data, branch settings, and cart information will be reset.<br><br>您确定要登出吗？当前资料、分行设置和购物车内容将会被重置。</p>
+  <!-- LOGOUT CONFIRM -->
+  <div id="logoutConfirmOverlay" class="confirmOverlay hidden">
+    <div class="confirmBox">
+      <h3>Logout?</h3>
+      <p>Logout will clear this device login, cart, and branch names.</p>
+
       <div class="confirmActions">
-        <button id="logoutConfirmCancel" type="button">Cancel / 取消</button>
-        <button id="logoutConfirmOk" type="button">Logout / 登出</button>
+        <button id="logoutConfirmCancel" type="button">Cancel</button>
+        <button id="logoutConfirmOk" type="button">Logout</button>
       </div>
     </div>
   </div>
 
-  <script src="script.js?v=202606192400"></script>
-
+  <script src="script.js?v=1002"></script>
 </body>
 </html>

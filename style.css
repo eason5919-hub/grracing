@@ -34,7 +34,6 @@ body{
   overscroll-behavior:none;
 }
 
-/* INVISIBLE TOP TAP AREA FOR IPHONE / ANDROID */
 #topTapZone{
   position:fixed;
   top:0;
@@ -244,7 +243,6 @@ header{
   background:var(--navy);
   color:var(--gold-light);
   border:1px solid var(--gold);
-  border:none;
   padding:6px 10px;
   border-radius:10px;
   cursor:pointer;
@@ -293,6 +291,7 @@ main{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
   background:var(--canvas);
+  padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));
 }
 
 .card{
@@ -305,22 +304,18 @@ main{
   padding:12px 12px;
   cursor:pointer;
   overflow:hidden;
-  transition:filter 0.15s ease, transform 0.05s ease;
+  transition:filter .15s ease;
   border:1px solid #d8c6a5;
   flex:0 0 auto;
 }
 
 .card:hover{
-  filter:brightness(0.98);
-}
-
-.card:active{
-  transform:scale(0.998);
+  filter:brightness(.98);
 }
 
 .info{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 120px 150px 140px;
+  grid-template-columns:minmax(0,1fr) 120px 150px 160px;
   align-items:center;
   gap:12px;
   width:100%;
@@ -357,7 +352,6 @@ main{
   text-align:center;
   white-space:nowrap;
   padding:5px 8px;
-  border-radius:0;
   min-width:95px;
   display:inline-block;
 }
@@ -393,7 +387,7 @@ button:disabled{
 }
 
 .qtyControls{
-  width:140px;
+  width:160px;
   height:38px;
   display:flex;
   gap:6px;
@@ -409,7 +403,7 @@ button:disabled{
 }
 
 .qtyInput{
-  width:50px;
+  width:70px;
   height:38px;
   text-align:center;
   padding:7px;
@@ -505,7 +499,7 @@ select{
 }
 
 .cartRow .qtyInput{
-  flex:0 0 58px;
+  flex:0 0 70px;
 }
 
 .cartRow .remove{
@@ -566,6 +560,7 @@ select{
 .accountManagerActions{
   display:flex;
   gap:10px;
+  flex-wrap:wrap;
 }
 
 .accountManagerActions .secondaryButton{
@@ -645,6 +640,11 @@ select{
 .orderMetadata summary{
   cursor:pointer;
   font-weight:800;
+}
+
+.orderMetadata pre{
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
 .removeRegisteredUserButton{
@@ -735,16 +735,14 @@ select{
   border-color:var(--navy);
 }
 
-.loginBox .textButton{
-  width:auto;
-  display:block;
-  margin:14px auto 0;
-  padding:4px 2px;
-  border:0;
-  border-radius:0;
+.textButton{
+  width:100%;
+  margin-top:12px;
   background:transparent;
   color:var(--navy-soft);
+  border:0;
   text-decoration:underline;
+  padding:8px;
 }
 
 .formMessage{
@@ -752,7 +750,6 @@ select{
   min-height:18px;
   margin-top:12px;
   font-weight:800;
-  line-height:1.4;
 }
 
 .errorMessage{
@@ -760,95 +757,290 @@ select{
 }
 
 .successMessage{
-  color:#267044;
+  color:#1c6b3d;
+}
+
+#branchSettingButton{
+  width:100%;
+  margin:12px 0 8px;
+  background:var(--navy-soft);
+}
+
+.branchSettingPanel,
+.branchSplitPanel,
+.quickBranchDropdown{
+  background:#f3ecdd;
+  border:1px solid var(--gold);
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+  box-sizing:border-box;
+}
+
+.branchSettingPanel h3,
+.branchSplitPanel h4,
+.quickBranchDropdown h4{
+  margin:0 0 10px;
+  font-size:15px;
+}
+
+.branchInputRow,
+.branchQtyRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.branchInputRow label,
+.branchQtyRow label{
+  flex:0 0 88px;
+  font-size:13px;
+  font-weight:bold;
+  word-break:break-word;
+}
+
+.branchInputRow input,
+.branchQtyRow input{
+  flex:1;
+  min-width:0;
+  height:40px;
+  padding:8px 10px;
+  border:1px solid #ccc;
+  border-radius:9px;
+  font-size:16px;
+  box-sizing:border-box;
+}
+
+.branchQtyRow input{
+  max-width:110px;
+  text-align:center;
+  font-weight:bold;
+}
+
+.branchQtyControl{
+  width:100%;
+}
+
+.branchQtyStepper{
+  display:none;
+}
+
+.branchEditorActions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.branchEditorActions button{
+  flex:1;
+}
+
+.branchButton{
+  background:var(--navy-soft);
+}
+
+.cartActionRow{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+.cartActionRow button{
+  flex:1;
+}
+
+.branchPreview{
+  margin-top:8px;
+  color:var(--navy-soft);
+  font-size:12px;
+  line-height:1.35;
+  font-weight:bold;
+  word-break:break-word;
+}
+
+.branchSplitTotal{
+  margin-top:6px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.quickBranchDropdown{
+  width:100%;
+  min-width:172px;
+  max-width:208px;
+  margin:0;
+}
+
+.quickBranchDropdown .branchQtyRow,
+.branchSplitPanel .branchQtyRow{
+  display:grid;
+  grid-template-columns:minmax(52px,1fr) minmax(78px,96px);
+  align-items:center;
+  gap:10px;
+}
+
+.quickBranchDropdown .branchQtyRow label,
+.branchSplitPanel .branchQtyRow label{
+  flex:none;
+  min-width:0;
+}
+
+.quickBranchDropdown .branchQtyRow input,
+.branchSplitPanel .branchQtyRow input{
+  width:100%;
+  min-width:78px;
+  max-width:none;
+  justify-self:end;
+}
+
+.quickBranchDropdown .branchEditorActions button{
+  padding:10px 8px;
+  font-size:12px;
+}
+
+.confirmOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.58);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  z-index:12000;
+}
+
+.confirmBox{
+  width:min(420px,100%);
+  background:var(--cream);
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 16px 40px rgba(0,0,0,.22);
+}
+
+.confirmBox h3{
+  margin:0 0 10px;
+  font-size:20px;
+  color:var(--navy);
+}
+
+.confirmBox p{
+  margin:0 0 16px;
+  line-height:1.5;
+  color:var(--navy-soft);
+  font-size:14px;
+}
+
+.confirmActions{
+  display:flex;
+  gap:10px;
+}
+
+.confirmActions button{
+  flex:1;
+}
+
+#logoutConfirmCancel{
+  background:var(--slate);
+}
+
+#logoutConfirmOk{
+  background:var(--navy);
 }
 
 .photoViewer{
   position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.85);
+  inset:0;
+  z-index:9000;
+  background:rgba(0,0,0,.75);
   display:flex;
-  justify-content:center;
   align-items:center;
-  z-index:9999;
+  justify-content:center;
+  padding:18px;
 }
 
 .photoViewerBox{
-  background:var(--cream);
-  padding:15px;
-  border-radius:12px;
-  width:90%;
-  max-width:720px;
-  max-height:90%;
-  text-align:center;
   position:relative;
+  background:var(--cream);
+  border:1px solid var(--gold);
+  border-radius:16px;
+  padding:16px;
+  width:min(900px,100%);
+  max-height:92dvh;
+  overflow:auto;
+}
+
+.photoViewerBox h3{
+  margin:0 44px 12px 0;
+  color:var(--navy);
 }
 
 .photoViewerBox img{
-  max-width:100%;
-  max-height:75vh;
+  width:100%;
+  max-height:75dvh;
   object-fit:contain;
+  display:block;
+  border-radius:10px;
+  background:white;
 }
 
-.closeViewer{
+.photoViewerClose{
   position:absolute;
-  right:10px;
-  top:10px;
-  background:var(--danger);
+  right:12px;
+  top:12px;
+  width:36px;
+  height:36px;
+  padding:0;
+  border-radius:50%;
 }
 
-.viewerButtons{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin-top:10px;
-}
-
-@media(max-width:1100px){
+@media (max-width:900px){
   .info{
-    grid-template-columns:minmax(0,1fr) 100px 120px 130px;
+    grid-template-columns:minmax(0,1fr) 90px 110px 150px;
     gap:8px;
   }
 
-  .desc{
-    font-size:17px;
-  }
-
+  .desc,
   .brandName{
-    font-size:17px;
+    font-size:15px;
   }
 
   .price{
-    font-size:14px;
-  }
-
-  .stock{
-    min-width:85px;
     font-size:13px;
   }
 
-  .orderArea > button{
-    width:115px;
+  .stock{
+    min-width:82px;
+    font-size:12px;
   }
 }
 
-@media(max-width:800px){
+@media (max-width:600px){
+  header{
+    padding:10px;
+  }
+
+  .headerName{
+    font-size:17px;
+  }
+
+  .grid,
+  main{
+    padding-bottom:calc(170px + env(safe-area-inset-bottom,0px));
+  }
+
+  .card{
+    padding:10px;
+    min-height:78px;
+  }
+
   .info{
-    grid-template-columns:1fr 85px 95px;
-    gap:10px;
-  }
-
-  .price,
-  .stockBox,
-  .orderArea{
-    grid-column:auto;
+    grid-template-columns:1fr;
+    gap:8px;
+    align-items:start;
   }
 
   .orderArea{
-    grid-column:1 / -1;
     justify-content:flex-start;
   }
 
@@ -857,157 +1049,104 @@ select{
   }
 
   .qtyControls{
+    width:168px;
+  }
+
+  .qtyInput{
+    width:72px;
+  }
+
+  #cartPanel{
     width:100%;
-  }
-}
-
-@media(max-width:600px){
-  #topTapZone{
-    height:34px;
-  }
-
-  header{
-    padding:10px;
   }
 
   .accountManagerScreen{
     padding:12px;
   }
 
-  .accountManagerHeader,
-  .registeredUserCard{
-    align-items:stretch;
-    flex-direction:column;
+  .accountManagerHeader{
+    display:block;
+    padding:16px;
   }
 
   .accountManagerActions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
+    margin-top:12px;
+  }
+
+  .registeredUserCard{
+    display:block;
   }
 
   .removeRegisteredUserButton{
     width:100%;
+    margin-top:12px;
   }
 
-  .savedOrderItem{
+  .branchInputRow,
+  .branchQtyRow{
     align-items:flex-start;
     flex-direction:column;
-    gap:4px;
+    gap:5px;
   }
 
-  .savedOrderItem span{
-    text-align:left;
-  }
-
-  .headerName{
-    max-width:70%;
-    font-size:17px;
-    letter-spacing:.035em;
-  }
-
-  #refreshAppButton{
-    height:34px;
-    padding:0 10px;
-    font-size:12px;
-  }
-
-  .headerActionRow{
-    gap:6px;
-  }
-
-  #yearButton{
-    font-size:12px;
-    padding:8px 10px;
-  }
-
-  .yearDropdown button{
-    font-size:12px;
-    padding:8px 10px;
-  }
-
-  .pcdMenu{
-    gap:6px;
-  }
-
-  .pcdMenu button{
-    font-size:12px;
-    padding:8px 10px;
-  }
-
-  .categoryMenu{
-    gap:7px;
-    padding:8px;
-    margin:0;
-  }
-
-  .categoryMenu button{
-    min-height:42px;
-    padding:6px 8px;
-  }
-
-  .brandCategoryButton img{
-    height:28px;
-    max-width:105px;
-  }
-
-  .textCategoryButton{
-    font-size:12px;
-    min-width:52px;
-  }
-
-  .grid,
-  main{
-    gap:8px;
-    padding:8px;
-  }
-
-  .card{
-    padding:12px;
-    min-height:128px;
-    align-items:flex-start;
-  }
-
-  .info{
-    grid-template-columns:1fr;
-    gap:8px;
-  }
-
-  .desc{
-    font-size:16px;
-  }
-
-  .brandName{
-    font-size:16px;
-  }
-
-  .price,
-  .stock{
-    font-size:13px;
-  }
-
-  .stockBox{
-    justify-content:flex-start;
-  }
-
-  .orderArea{
-    justify-content:flex-start;
-  }
-
-  .orderArea > button{
+  .quickBranchDropdown{
+    min-width:0;
+    max-width:none;
     width:100%;
-    height:36px;
   }
 
-  button{
-    padding:9px 10px;
-    font-size:12px;
+  .quickBranchDropdown .branchQtyRow,
+  .branchSplitPanel .branchQtyRow{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    align-items:center;
+    gap:8px;
   }
 
-  .qtyControls{
-    height:36px;
-    gap:6px;
+  .quickBranchDropdown .branchQtyRow label,
+  .branchSplitPanel .branchQtyRow label{
+    flex:none;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    width:100%;
   }
 
+  .branchQtyRow input{
+    max-width:none;
+    width:100%;
+  }
+
+  .quickBranchDropdown .branchQtyControl,
+  .branchSplitPanel .branchQtyControl{
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr) 34px;
+    align-items:center;
+    gap:8px;
+    width:100%;
+  }
+
+  .quickBranchDropdown .branchQtyStepper,
+  .branchSplitPanel .branchQtyStepper{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:40px;
+    padding:0;
+    border:none;
+    border-radius:9px;
+    background:var(--navy);
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+    line-height:1;
+  }
+}
+
+@media (max-width:380px){
   .qtyControls button{
     padding:6px 9px;
     min-width:30px;
