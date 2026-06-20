@@ -18,8 +18,9 @@ let cardBySku = {};
 let latestProductsJsonText = "";
 let refreshLock = false;
 let authEventSource = null;
-const APP_ASSET_VERSION = "202606200951";
+const APP_ASSET_VERSION = "202606200959";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
+const API_BASE_URL = cleanValue(window.GR_RACING_API_BASE_URL || "").replace(/\/$/, "");
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
 const CURRENT_USER_STORAGE_KEY = "grRacingCurrentUser";
 const AUTH_TOKEN_STORAGE_KEY = "grRacingAuthToken";
@@ -1641,7 +1642,19 @@ function clearAuthToken(){
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
+function apiUrl(path){
+  return `${API_BASE_URL}${path}`;
+}
+
+function needsPublicApiServer(){
+  return window.location.hostname.endsWith("github.io") && !API_BASE_URL;
+}
+
 async function apiRequest(path, options = {}){
+  if(needsPublicApiServer()){
+    throw new Error("Online login server is not connected yet. Please set GR_RACING_API_BASE_URL to your public server URL.");
+  }
+
   const headers = Object.assign({ "Content-Type":"application/json" }, options.headers || {});
   const token = getAuthToken();
 
@@ -1652,12 +1665,12 @@ async function apiRequest(path, options = {}){
   let response;
 
   try{
-    response = await fetch(path, Object.assign({}, options, {
+    response = await fetch(apiUrl(path), Object.assign({}, options, {
       headers,
       cache:"no-store"
     }));
   }catch(error){
-    throw new Error("Shared login server is not running. Open START TYRE EXPRESS SERVER.cmd and use http://localhost:8787");
+    throw new Error("Login server cannot be reached. Please check the public server URL.");
   }
 
   let data = {};
@@ -1819,11 +1832,11 @@ async function validateCurrentSession(options = {}){
 }
 
 function startAuthEventListener(){
-  if(authEventSource || !window.EventSource){
+  if(authEventSource || !window.EventSource || needsPublicApiServer()){
     return;
   }
 
-  authEventSource = new EventSource("/api/events");
+  authEventSource = new EventSource(apiUrl("/api/events"));
 
   authEventSource.addEventListener("accounts", event => {
     let payload = {};
