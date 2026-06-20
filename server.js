@@ -201,7 +201,9 @@ function serveStatic(request, response, url){
 
     response.writeHead(200, {
       "Content-Type":mimeType(filePath),
-      "Cache-Control":filePath.endsWith("products.json") ? "no-store" : "no-cache"
+      "Cache-Control":"no-store, no-cache, must-revalidate",
+      "Pragma":"no-cache",
+      "Expires":"0"
     });
     fs.createReadStream(filePath).pipe(response);
   });

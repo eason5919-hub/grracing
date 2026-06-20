@@ -18,7 +18,7 @@ let cardBySku = {};
 let latestProductsJsonText = "";
 let refreshLock = false;
 let authEventSource = null;
-const APP_ASSET_VERSION = "202606200921";
+const APP_ASSET_VERSION = "202606200951";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
 const CURRENT_USER_STORAGE_KEY = "grRacingCurrentUser";
@@ -1669,6 +1669,10 @@ async function apiRequest(path, options = {}){
   }
 
   if(!response.ok){
+    if(response.status === 404 || response.status === 405){
+      throw new Error("Signup server not found. Please open the app from the PC server link with :8787.");
+    }
+
     throw new Error(data.error || "Server request failed.");
   }
 
@@ -3029,6 +3033,9 @@ resetBarsToLeft();
 loadProducts();
 
 setInterval(autoRefreshProducts, 60000);
+setInterval(() => {
+  validateCurrentSession({ silent:true });
+}, 15000);
 
 window.addEventListener('pageshow', function(){
   ensureInteractionStyleFixes();
