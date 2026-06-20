@@ -17,10 +17,13 @@ let cardBySku = {};
 
 let latestProductsJsonText = "";
 let refreshLock = false;
-const APP_ASSET_VERSION = "202606192130";
+let authEventSource = null;
+const APP_ASSET_VERSION = "202606200921";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
 const CURRENT_USER_STORAGE_KEY = "grRacingCurrentUser";
+const AUTH_TOKEN_STORAGE_KEY = "grRacingAuthToken";
+const LOCAL_ACCOUNT_IMPORT_STORAGE_KEY = "grRacingLocalAccountsImported";
 const BRANCH_NAMES_STORAGE_KEY = "tyreOneBranchNames";
 const DEFAULT_BRANCH_SLOT_COUNT = 10;
 const BRANCH_SLOT_EXPAND_COUNT = 5;
@@ -1061,9 +1064,19 @@ function closeLogoutConfirm(){
   overlay.classList.add("hidden");
 }
 
-function performLogout(){
+function performLogout(options = {}){
+  const skipServerLogout = Boolean(options.skipServerLogout);
+  const message = cleanValue(options.message);
+
   closeLogoutConfirm();
 
+  if(getAuthToken() && !skipServerLogout){
+    apiRequest("/api/logout", { method:"POST" }).catch(error => {
+      console.warn("Server logout skipped:", error);
+    });
+  }
+
+  clearAuthToken();
   clearCurrentUser();
   localStorage.removeItem(BRANCH_NAMES_STORAGE_KEY);
 
@@ -1088,6 +1101,7 @@ function performLogout(){
   document.getElementById('loginUsername').value = "";
   document.getElementById('loginPassword').value = "";
   document.getElementById('loginError').textContent = "";
+  document.getElementById('loginStatus').textContent = message;
   document.getElementById('cartPanel').classList.add('hidden');
   showLoginView();
   document.getElementById('loginScreen').classList.remove('hidden');
@@ -1615,6 +1629,52 @@ function writeJsonStorage(key, value){
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getAuthToken(){
+  return cleanValue(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY));
+}
+
+function setAuthToken(token){
+  localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, cleanValue(token));
+}
+
+function clearAuthToken(){
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+}
+
+async function apiRequest(path, options = {}){
+  const headers = Object.assign({ "Content-Type":"application/json" }, options.headers || {});
+  const token = getAuthToken();
+
+  if(token){
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let response;
+
+  try{
+    response = await fetch(path, Object.assign({}, options, {
+      headers,
+      cache:"no-store"
+    }));
+  }catch(error){
+    throw new Error("Shared login server is not running. Open START TYRE EXPRESS SERVER.cmd and use http://localhost:8787");
+  }
+
+  let data = {};
+
+  try{
+    data = await response.json();
+  }catch(error){
+    data = {};
+  }
+
+  if(!response.ok){
+    throw new Error(data.error || "Server request failed.");
+  }
+
+  return data;
+}
+
 function getAccounts(){
   const accounts = readJsonStorage(ACCOUNTS_STORAGE_KEY, []);
   return Array.isArray(accounts) ? accounts : [];
@@ -1622,6 +1682,36 @@ function getAccounts(){
 
 function saveAccounts(accounts){
   writeJsonStorage(ACCOUNTS_STORAGE_KEY, Array.isArray(accounts) ? accounts : []);
+}
+
+async function importLocalAccountsToServer(){
+  if(localStorage.getItem(LOCAL_ACCOUNT_IMPORT_STORAGE_KEY) === "1"){
+    return;
+  }
+
+  const accounts = getAccounts()
+    .filter(account => account && account.username && account.password);
+
+  if(accounts.length === 0){
+    localStorage.setItem(LOCAL_ACCOUNT_IMPORT_STORAGE_KEY, "1");
+    return;
+  }
+
+  const payload = accounts.map(account => ({
+    companyName:account.companyName,
+    ssmNumber:account.ssmNumber,
+    whatsappNumber:account.whatsappNumber,
+    username:account.username,
+    password:account.password,
+    createdAt:account.createdAt
+  }));
+
+  await apiRequest("/api/import-local-accounts", {
+    method:"POST",
+    body:JSON.stringify({ accounts:payload })
+  });
+
+  localStorage.setItem(LOCAL_ACCOUNT_IMPORT_STORAGE_KEY, "1");
 }
 
 function makeId(prefix){
@@ -1688,10 +1778,79 @@ function applyLoggedInUser(user){
   hideLoginScreen();
 }
 
+function forceLogin(message){
+  performLogout({
+    skipServerLogout:true,
+    message:message || "Please log in again."
+  });
+}
+
+async function validateCurrentSession(options = {}){
+  const token = getAuthToken();
+  const currentUser = getCurrentUser();
+
+  if(!token || !currentUser || !currentUser.username){
+    clearAuthToken();
+    clearCurrentUser();
+    if(!options.silent){
+      showLoginScreen();
+    }
+    return false;
+  }
+
+  try{
+    const data = await apiRequest("/api/session");
+    const user = Object.assign({}, data.account, {
+      loginAt:currentUser.loginAt || new Date().toISOString(),
+      deviceInfo:getDeviceInfo()
+    });
+
+    setCurrentUser(user);
+    applyLoggedInUser(user);
+    return true;
+  }catch(error){
+    forceLogin("This account is no longer active. Please contact admin.");
+    return false;
+  }
+}
+
+function startAuthEventListener(){
+  if(authEventSource || !window.EventSource){
+    return;
+  }
+
+  authEventSource = new EventSource("/api/events");
+
+  authEventSource.addEventListener("accounts", event => {
+    let payload = {};
+
+    try{
+      payload = JSON.parse(event.data || "{}");
+    }catch(error){
+      payload = {};
+    }
+
+    const currentUser = getCurrentUser();
+
+    if(
+      payload.action === "removed" &&
+      currentUser &&
+      currentUser.id &&
+      payload.accountId === currentUser.id
+    ){
+      forceLogin("This account was removed. Please contact admin.");
+    }
+  });
+
+  authEventSource.onerror = () => {
+    validateCurrentSession({ silent:true });
+  };
+}
+
 function requireLogin(){
   const currentUser = getCurrentUser();
 
-  if(currentUser && currentUser.username){
+  if(currentUser && currentUser.username && getAuthToken()){
     applyLoggedInUser(currentUser);
     return true;
   }
@@ -1700,7 +1859,7 @@ function requireLogin(){
   return false;
 }
 
-function handleLogin(event){
+async function handleLogin(event){
   event.preventDefault();
   clearLoginMessages();
 
@@ -1712,30 +1871,34 @@ function handleLogin(event){
     return;
   }
 
-  const account = getAccounts().find(acc => cleanValue(acc.username).toLowerCase() === username.toLowerCase());
+  try{
+    await importLocalAccountsToServer();
 
-  if(!account || cleanValue(account.password) !== password){
-    document.getElementById("loginError").textContent = "Wrong username or password.";
-    return;
+    const data = await apiRequest("/api/login", {
+      method:"POST",
+      body:JSON.stringify({
+        username,
+        password,
+        deviceInfo:getDeviceInfo()
+      })
+    });
+
+    const user = Object.assign({}, data.account, {
+      loginAt:new Date().toISOString(),
+      deviceInfo:getDeviceInfo()
+    });
+
+    setAuthToken(data.token);
+    setCurrentUser(user);
+    applyLoggedInUser(user);
+    document.getElementById("loginPassword").value = "";
+    renderAndStayTop();
+  }catch(error){
+    document.getElementById("loginError").textContent = error.message || "Wrong username or password.";
   }
-
-  const user = {
-    id: account.id,
-    companyName: account.companyName,
-    ssmNumber: account.ssmNumber,
-    whatsappNumber: account.whatsappNumber,
-    username: account.username,
-    loginAt: new Date().toISOString(),
-    deviceInfo: getDeviceInfo()
-  };
-
-  setCurrentUser(user);
-  applyLoggedInUser(user);
-  document.getElementById("loginPassword").value = "";
-  renderAndStayTop();
 }
 
-function handleSignup(event){
+async function handleSignup(event){
   event.preventDefault();
   clearLoginMessages();
 
@@ -1761,56 +1924,52 @@ function handleSignup(event){
     return;
   }
 
-  const accounts = getAccounts();
+  try{
+    await apiRequest("/api/signup", {
+      method:"POST",
+      body:JSON.stringify({
+        companyName,
+        ssmNumber,
+        whatsappNumber,
+        username,
+        password
+      })
+    });
 
-  if(accounts.some(acc => normalizeWhatsappNumber(acc.whatsappNumber) === whatsappNumber)){
-    document.getElementById("signupError").textContent = "WhatsApp number already registered.";
-    return;
+    document.getElementById("loginUsername").value = username;
+    document.getElementById("loginPassword").value = password;
+    document.getElementById("loginStatus").textContent = "Account created. You can login from any tab using the server.";
+    document.getElementById("signupForm").reset();
+    showLoginView();
+  }catch(error){
+    document.getElementById("signupError").textContent = error.message || "Unable to create account.";
   }
-
-  const account = {
-    id: makeId("acc"),
-    companyName,
-    ssmNumber,
-    whatsappNumber,
-    username,
-    password,
-    createdAt: new Date().toISOString(),
-    deviceInfo: getDeviceInfo()
-  };
-
-  accounts.push(account);
-  saveAccounts(accounts);
-
-  document.getElementById("loginUsername").value = username;
-  document.getElementById("loginPassword").value = password;
-  document.getElementById("loginStatus").textContent = "Account created. You can login now.";
-  document.getElementById("signupForm").reset();
-  showLoginView();
 }
 
-function handleForgotVerify(event){
+async function handleForgotVerify(event){
   event.preventDefault();
   clearLoginMessages();
 
   const ssmNumber = cleanValue(document.getElementById("forgotSsmNumber").value);
   const whatsappNumber = normalizeWhatsappNumber(document.getElementById("forgotWhatsappNumber").value);
 
-  const account = getAccounts().find(acc =>
-    cleanValue(acc.ssmNumber).toLowerCase() === ssmNumber.toLowerCase() &&
-    normalizeWhatsappNumber(acc.whatsappNumber) === whatsappNumber
-  );
+  try{
+    const data = await apiRequest("/api/forgot/verify", {
+      method:"POST",
+      body:JSON.stringify({
+        ssmNumber,
+        whatsappNumber
+      })
+    });
 
-  if(!account){
-    document.getElementById("forgotPasswordError").textContent = "Account not found on this device.";
-    return;
+    passwordResetUsername = cleanValue(data.resetToken);
+    showResetPasswordView();
+  }catch(error){
+    document.getElementById("forgotPasswordError").textContent = error.message || "Account not found.";
   }
-
-  passwordResetUsername = account.username;
-  showResetPasswordView();
 }
 
-function handlePasswordReset(event){
+async function handlePasswordReset(event){
   event.preventDefault();
   clearLoginMessages();
 
@@ -1827,23 +1986,24 @@ function handlePasswordReset(event){
     return;
   }
 
-  const accounts = getAccounts();
-  const account = accounts.find(acc => acc.username === passwordResetUsername);
+  try{
+    const data = await apiRequest("/api/forgot/reset", {
+      method:"POST",
+      body:JSON.stringify({
+        resetToken:passwordResetUsername,
+        password
+      })
+    });
 
-  if(!account){
-    document.getElementById("resetPasswordError").textContent = "Reset account not found.";
-    return;
+    document.getElementById("loginUsername").value = cleanValue(data.username);
+    document.getElementById("loginPassword").value = password;
+    document.getElementById("loginStatus").textContent = "Password reset done. You can login now.";
+    document.getElementById("resetPasswordForm").reset();
+    passwordResetUsername = "";
+    showLoginView();
+  }catch(error){
+    document.getElementById("resetPasswordError").textContent = error.message || "Unable to reset password.";
   }
-
-  account.password = password;
-  saveAccounts(accounts);
-
-  document.getElementById("loginUsername").value = account.username;
-  document.getElementById("loginPassword").value = password;
-  document.getElementById("loginStatus").textContent = "Password reset done. You can login now.";
-  document.getElementById("resetPasswordForm").reset();
-  passwordResetUsername = "";
-  showLoginView();
 }
 
 function bindLoginEvents(){
@@ -2665,8 +2825,12 @@ if(branchSettingButton){
   });
 }
 
-document.getElementById('sendWhatsapp').onclick = () => {
+document.getElementById('sendWhatsapp').onclick = async () => {
   if(!requireLogin()){
+    return;
+  }
+
+  if(!await validateCurrentSession()){
     return;
   }
 
@@ -2855,6 +3019,8 @@ document.addEventListener('touchend', function(event){
 
 bindLoginEvents();
 checkLogin();
+validateCurrentSession({ silent:true });
+startAuthEventListener();
 resetFiltersToAll();
 ensureInteractionStyleFixes();
 loadBranchNames();
@@ -2868,4 +3034,5 @@ window.addEventListener('pageshow', function(){
   ensureInteractionStyleFixes();
   ensureAplusVietnamCategoryButton();
   resetBarsToLeft();
+  validateCurrentSession({ silent:true });
 });
