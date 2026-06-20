@@ -5,7 +5,7 @@
 
   <!-- FORCE UPDATE FOR PC / PHONE / WEB / INSTALLED APP -->
   <script>
-    const APP_VERSION = "202606201030";
+    const APP_VERSION = "202606201210";
     window.GR_RACING_API_BASE_URL = "https://grracing.onrender.com";
     const VERSION_KEY = "grRacingAppVersion";
     const url = new URL(window.location.href);
@@ -54,8 +54,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="GR RACING SPORTS">
 
-  <link rel="manifest" href="manifest.webmanifest?v=202606201030">
-  <link rel="stylesheet" href="style.css?v=202606201030">
+  <link rel="manifest" href="manifest.webmanifest?v=202606201210">
+  <link rel="stylesheet" href="style.css?v=202606201210">
 </head>
 
 <body>
@@ -102,8 +102,26 @@
           <label for="signupSsmNumber">SSM Number</label>
           <input type="text" id="signupSsmNumber" placeholder="SSM Number">
 
+          <label for="signupTinNumber">TIN Number</label>
+          <input type="text" id="signupTinNumber" placeholder="TIN Number">
+
+          <label for="signupBusinessAddress1">Business Address</label>
+          <input type="text" id="signupBusinessAddress1" placeholder="Address row 1" autocomplete="address-line1">
+
+          <label for="signupBusinessAddress2">Business Address Row 2</label>
+          <input type="text" id="signupBusinessAddress2" placeholder="Address row 2" autocomplete="address-line2">
+
+          <label for="signupBusinessAddress3">Business Address Row 3</label>
+          <input type="text" id="signupBusinessAddress3" placeholder="Address row 3">
+
           <label for="signupWhatsappNumber">WhatsApp Number</label>
           <input type="tel" id="signupWhatsappNumber" placeholder="Example: 60123456789" inputmode="tel" autocomplete="tel">
+
+          <label for="signupContactPerson">Contact Person</label>
+          <input type="text" id="signupContactPerson" placeholder="Contact Person" autocomplete="name">
+
+          <label for="signupContactNumber">Contact Number</label>
+          <input type="tel" id="signupContactNumber" placeholder="Example: 60123456789" inputmode="tel">
 
           <label for="signupUsername">Username</label>
           <input type="text" id="signupUsername" placeholder="Username" autocomplete="username">
@@ -231,47 +249,47 @@
       </button>
 
       <button class="brandCategoryButton" data-category="APLUS VIETNAM" onclick="showCategory('APLUS VIETNAM')" type="button">
-        <img src="aplus-vietnam-logo.jpg?v=202606201030" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
+        <img src="aplus-vietnam-logo.jpg?v=202606201210" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
         <span>APLUS VIETNAM</span>
       </button>
 
       <button class="brandCategoryButton" data-category="APLUS" onclick="showCategory('APLUS')" type="button">
-        <img src="aplus-logo.jpg?v=202606201030" alt="APLUS" onerror="brandLogoMissing(this)">
+        <img src="aplus-logo.jpg?v=202606201210" alt="APLUS" onerror="brandLogoMissing(this)">
         <span>APLUS</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ROCKBLADE" onclick="showCategory('ROCKBLADE')" type="button">
-        <img src="rockblade-logo.jpg?v=202606201030" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
+        <img src="rockblade-logo.jpg?v=202606201210" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
         <span>ROCKBLADE</span>
       </button>
 
       <button class="brandCategoryButton" data-category="HILO" onclick="showCategory('HILO')" type="button">
-        <img src="hilo-logo.jpg?v=202606201030" alt="HILO" onerror="brandLogoMissing(this)">
+        <img src="hilo-logo.jpg?v=202606201210" alt="HILO" onerror="brandLogoMissing(this)">
         <span>HILO</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ARDENT" onclick="showCategory('ARDENT')" type="button">
-        <img src="ardent-logo.jpg?v=202606201030" alt="ARDENT" onerror="brandLogoMissing(this)">
+        <img src="ardent-logo.jpg?v=202606201210" alt="ARDENT" onerror="brandLogoMissing(this)">
         <span>ARDENT</span>
       </button>
 
       <button class="brandCategoryButton" data-category="RAUFFAN" onclick="showCategory('RAUFFAN')" type="button">
-        <img src="rauffan-logo.jpg?v=202606201030" alt="RAUFFAN" onerror="brandLogoMissing(this)">
+        <img src="rauffan-logo.jpg?v=202606201210" alt="RAUFFAN" onerror="brandLogoMissing(this)">
         <span>RAUFFAN</span>
       </button>
 
       <button class="brandCategoryButton" data-category="CROSSMAXX" onclick="showCategory('CROSSMAXX')" type="button">
-        <img src="crossmaxx-logo.jpg?v=202606201030" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
+        <img src="crossmaxx-logo.jpg?v=202606201210" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
         <span>CROSSMAXX</span>
       </button>
 
       <button class="brandCategoryButton" data-category="NEOLIN" onclick="showCategory('NEOLIN')" type="button">
-        <img src="neolin-logo.jpg?v=202606201030" alt="NEOLIN" onerror="brandLogoMissing(this)">
+        <img src="neolin-logo.jpg?v=202606201210" alt="NEOLIN" onerror="brandLogoMissing(this)">
         <span>NEOLIN</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ROTALLA" onclick="showCategory('ROTALLA')" type="button">
-        <img src="rotalla-logo.jpg?v=202606201030" alt="ROTALLA" onerror="brandLogoMissing(this)">
+        <img src="rotalla-logo.jpg?v=202606201210" alt="ROTALLA" onerror="brandLogoMissing(this)">
         <span>ROTALLA</span>
       </button>
 
@@ -320,6 +338,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=202606201030"></script>
+  <script src="script.js?v=202606201210"></script>
 </body>
 </html>

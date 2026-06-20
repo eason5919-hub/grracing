@@ -154,7 +154,13 @@ function publicAccount(account){
     id:account.id,
     companyName:account.companyName,
     ssmNumber:account.ssmNumber,
+    tinNumber:account.tinNumber,
+    businessAddress1:account.businessAddress1,
+    businessAddress2:account.businessAddress2,
+    businessAddress3:account.businessAddress3,
     whatsappNumber:account.whatsappNumber,
+    contactPerson:account.contactPerson,
+    contactNumber:account.contactNumber,
     username:account.username,
     createdAt:account.createdAt
   };
@@ -316,17 +322,27 @@ async function handleApi(request, response, url){
     const companyName = clean(body.companyName);
     const ssmNumber = clean(body.ssmNumber);
     const ssmKey = normalizeSsm(ssmNumber);
+    const tinNumber = clean(body.tinNumber);
+    const businessAddress1 = clean(body.businessAddress1);
+    const businessAddress2 = clean(body.businessAddress2);
+    const businessAddress3 = clean(body.businessAddress3);
     const whatsappNumber = normalizePhone(body.whatsappNumber);
+    const contactPerson = clean(body.contactPerson);
+    const contactNumber = normalizePhone(body.contactNumber);
     const username = clean(body.username);
     const usernameKey = normalizeUsername(username);
     const password = String(body.password || "");
 
-    if(!companyName || !ssmKey || !whatsappNumber || !usernameKey || !password){
+    if(!companyName || !ssmKey || !tinNumber || !businessAddress1 || !businessAddress2 || !businessAddress3 || !whatsappNumber || !contactPerson || !contactNumber || !usernameKey || !password){
       json(response, 400, { error:"Please complete every field." });
       return;
     }
     if(!validPhone(whatsappNumber)){
       json(response, 400, { error:"Please enter a valid WhatsApp number. Example: 60123456789" });
+      return;
+    }
+    if(!validPhone(contactNumber)){
+      json(response, 400, { error:"Please enter a valid contact number. Example: 60123456789" });
       return;
     }
     if(database.accounts.some(account => account.usernameKey === usernameKey)){
@@ -344,7 +360,13 @@ async function handleApi(request, response, url){
       companyName,
       ssmNumber,
       ssmKey,
+      tinNumber,
+      businessAddress1,
+      businessAddress2,
+      businessAddress3,
       whatsappNumber,
+      contactPerson,
+      contactNumber,
       username,
       usernameKey,
       passwordSalt:salt,
@@ -368,7 +390,13 @@ async function handleApi(request, response, url){
       const companyName = clean(item.companyName);
       const ssmNumber = clean(item.ssmNumber);
       const ssmKey = normalizeSsm(ssmNumber);
+      const tinNumber = clean(item.tinNumber);
+      const businessAddress1 = clean(item.businessAddress1);
+      const businessAddress2 = clean(item.businessAddress2);
+      const businessAddress3 = clean(item.businessAddress3);
       const whatsappNumber = normalizePhone(item.whatsappNumber);
+      const contactPerson = clean(item.contactPerson);
+      const contactNumber = normalizePhone(item.contactNumber);
       const username = clean(item.username);
       const usernameKey = normalizeUsername(username);
       const passwordSalt = clean(item.passwordSalt);
@@ -403,7 +431,13 @@ async function handleApi(request, response, url){
         companyName,
         ssmNumber,
         ssmKey,
+        tinNumber,
+        businessAddress1,
+        businessAddress2,
+        businessAddress3,
         whatsappNumber,
+        contactPerson,
+        contactNumber,
         username,
         usernameKey,
         passwordSalt:accountSalt,

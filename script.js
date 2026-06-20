@@ -18,7 +18,7 @@ let cardBySku = {};
 let latestProductsJsonText = "";
 let refreshLock = false;
 let authEventSource = null;
-const APP_ASSET_VERSION = "202606201030";
+const APP_ASSET_VERSION = "202606201210";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 const API_BASE_URL = cleanValue(window.GR_RACING_API_BASE_URL || "").replace(/\/$/, "");
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
@@ -1921,18 +1921,29 @@ async function handleSignup(event){
 
   const companyName = cleanValue(document.getElementById("signupCompanyName").value);
   const ssmNumber = cleanValue(document.getElementById("signupSsmNumber").value);
+  const tinNumber = cleanValue(document.getElementById("signupTinNumber").value);
+  const businessAddress1 = cleanValue(document.getElementById("signupBusinessAddress1").value);
+  const businessAddress2 = cleanValue(document.getElementById("signupBusinessAddress2").value);
+  const businessAddress3 = cleanValue(document.getElementById("signupBusinessAddress3").value);
   const whatsappNumber = normalizeWhatsappNumber(document.getElementById("signupWhatsappNumber").value);
+  const contactPerson = cleanValue(document.getElementById("signupContactPerson").value);
+  const contactNumber = normalizeWhatsappNumber(document.getElementById("signupContactNumber").value);
   const username = cleanValue(document.getElementById("signupUsername").value);
   const password = cleanValue(document.getElementById("signupPassword").value);
   const confirmPassword = cleanValue(document.getElementById("signupConfirmPassword").value);
 
-  if(!companyName || !ssmNumber || !whatsappNumber || !username || !password || !confirmPassword){
+  if(!companyName || !ssmNumber || !tinNumber || !businessAddress1 || !businessAddress2 || !businessAddress3 || !whatsappNumber || !contactPerson || !contactNumber || !username || !password || !confirmPassword){
     document.getElementById("signupError").textContent = "Please complete every field.";
     return;
   }
 
   if(!isValidWhatsappNumber(whatsappNumber)){
     document.getElementById("signupError").textContent = "Please enter a valid WhatsApp number. Example: 60123456789";
+    return;
+  }
+
+  if(!isValidWhatsappNumber(contactNumber)){
+    document.getElementById("signupError").textContent = "Please enter a valid contact number. Example: 60123456789";
     return;
   }
 
@@ -1947,7 +1958,13 @@ async function handleSignup(event){
       body:JSON.stringify({
         companyName,
         ssmNumber,
+        tinNumber,
+        businessAddress1,
+        businessAddress2,
+        businessAddress3,
         whatsappNumber,
+        contactPerson,
+        contactNumber,
         username,
         password
       })
