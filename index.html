@@ -5,7 +5,7 @@
 
   <!-- FORCE UPDATE FOR PC / PHONE / WEB / INSTALLED APP -->
   <script>
-    const APP_VERSION = "202606201210";
+    const APP_VERSION = "202606201225";
     window.GR_RACING_API_BASE_URL = "https://grracing.onrender.com";
     const VERSION_KEY = "grRacingAppVersion";
     const url = new URL(window.location.href);
@@ -54,8 +54,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="GR RACING SPORTS">
 
-  <link rel="manifest" href="manifest.webmanifest?v=202606201210">
-  <link rel="stylesheet" href="style.css?v=202606201210">
+  <link rel="manifest" href="manifest.webmanifest?v=202606201225">
+  <link rel="stylesheet" href="style.css?v=202606201225">
 </head>
 
 <body>
@@ -76,7 +76,10 @@
           <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
 
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+          <div class="passwordField">
+            <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+            <button class="passwordToggle" type="button" data-password-toggle="loginPassword">Show</button>
+          </div>
 
           <div class="loginActions">
             <button id="loginButton" type="submit">Login</button>
@@ -127,10 +130,16 @@
           <input type="text" id="signupUsername" placeholder="Username" autocomplete="username">
 
           <label for="signupPassword">Password</label>
-          <input type="password" id="signupPassword" placeholder="Password" autocomplete="new-password">
+          <div class="passwordField">
+            <input type="password" id="signupPassword" placeholder="Password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-password-toggle="signupPassword">Show</button>
+          </div>
 
           <label for="signupConfirmPassword">Confirm Password</label>
-          <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+          <div class="passwordField">
+            <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-password-toggle="signupConfirmPassword">Show</button>
+          </div>
 
           <div class="loginActions">
             <button id="signupButton" type="submit">Sign Up</button>
@@ -169,10 +178,16 @@
 
         <form id="resetPasswordForm">
           <label for="resetPassword">New Password</label>
-          <input type="password" id="resetPassword" placeholder="New Password" autocomplete="new-password">
+          <div class="passwordField">
+            <input type="password" id="resetPassword" placeholder="New Password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-password-toggle="resetPassword">Show</button>
+          </div>
 
           <label for="resetConfirmPassword">Confirm Password</label>
-          <input type="password" id="resetConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+          <div class="passwordField">
+            <input type="password" id="resetConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+            <button class="passwordToggle" type="button" data-password-toggle="resetConfirmPassword">Show</button>
+          </div>
 
           <div class="loginActions">
             <button id="confirmResetPasswordButton" type="submit">Confirm</button>
@@ -249,47 +264,47 @@
       </button>
 
       <button class="brandCategoryButton" data-category="APLUS VIETNAM" onclick="showCategory('APLUS VIETNAM')" type="button">
-        <img src="aplus-vietnam-logo.jpg?v=202606201210" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
+        <img src="aplus-vietnam-logo.jpg?v=202606201225" alt="APLUS VIETNAM" onerror="brandLogoMissing(this)">
         <span>APLUS VIETNAM</span>
       </button>
 
       <button class="brandCategoryButton" data-category="APLUS" onclick="showCategory('APLUS')" type="button">
-        <img src="aplus-logo.jpg?v=202606201210" alt="APLUS" onerror="brandLogoMissing(this)">
+        <img src="aplus-logo.jpg?v=202606201225" alt="APLUS" onerror="brandLogoMissing(this)">
         <span>APLUS</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ROCKBLADE" onclick="showCategory('ROCKBLADE')" type="button">
-        <img src="rockblade-logo.jpg?v=202606201210" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
+        <img src="rockblade-logo.jpg?v=202606201225" alt="ROCKBLADE" onerror="brandLogoMissing(this)">
         <span>ROCKBLADE</span>
       </button>
 
       <button class="brandCategoryButton" data-category="HILO" onclick="showCategory('HILO')" type="button">
-        <img src="hilo-logo.jpg?v=202606201210" alt="HILO" onerror="brandLogoMissing(this)">
+        <img src="hilo-logo.jpg?v=202606201225" alt="HILO" onerror="brandLogoMissing(this)">
         <span>HILO</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ARDENT" onclick="showCategory('ARDENT')" type="button">
-        <img src="ardent-logo.jpg?v=202606201210" alt="ARDENT" onerror="brandLogoMissing(this)">
+        <img src="ardent-logo.jpg?v=202606201225" alt="ARDENT" onerror="brandLogoMissing(this)">
         <span>ARDENT</span>
       </button>
 
       <button class="brandCategoryButton" data-category="RAUFFAN" onclick="showCategory('RAUFFAN')" type="button">
-        <img src="rauffan-logo.jpg?v=202606201210" alt="RAUFFAN" onerror="brandLogoMissing(this)">
+        <img src="rauffan-logo.jpg?v=202606201225" alt="RAUFFAN" onerror="brandLogoMissing(this)">
         <span>RAUFFAN</span>
       </button>
 
       <button class="brandCategoryButton" data-category="CROSSMAXX" onclick="showCategory('CROSSMAXX')" type="button">
-        <img src="crossmaxx-logo.jpg?v=202606201210" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
+        <img src="crossmaxx-logo.jpg?v=202606201225" alt="CROSSMAXX" onerror="brandLogoMissing(this)">
         <span>CROSSMAXX</span>
       </button>
 
       <button class="brandCategoryButton" data-category="NEOLIN" onclick="showCategory('NEOLIN')" type="button">
-        <img src="neolin-logo.jpg?v=202606201210" alt="NEOLIN" onerror="brandLogoMissing(this)">
+        <img src="neolin-logo.jpg?v=202606201225" alt="NEOLIN" onerror="brandLogoMissing(this)">
         <span>NEOLIN</span>
       </button>
 
       <button class="brandCategoryButton" data-category="ROTALLA" onclick="showCategory('ROTALLA')" type="button">
-        <img src="rotalla-logo.jpg?v=202606201210" alt="ROTALLA" onerror="brandLogoMissing(this)">
+        <img src="rotalla-logo.jpg?v=202606201225" alt="ROTALLA" onerror="brandLogoMissing(this)">
         <span>ROTALLA</span>
       </button>
 
@@ -338,6 +353,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=202606201210"></script>
+  <script src="script.js?v=202606201225"></script>
 </body>
 </html>

@@ -579,6 +579,31 @@ select{
   font-size:16px;
 }
 
+.passwordField{
+  position:relative;
+  margin-bottom:14px;
+}
+
+.loginBox .passwordField input{
+  margin-bottom:0;
+  padding-right:74px;
+}
+
+.passwordToggle{
+  position:absolute;
+  right:6px;
+  top:50%;
+  transform:translateY(-50%);
+  min-height:34px;
+  padding:0 10px;
+  border-radius:8px;
+  background:var(--navy-soft);
+  color:var(--gold-light);
+  border:1px solid var(--gold);
+  font-size:12px;
+  font-weight:900;
+}
+
 .loginActions{
   display:grid;
   grid-template-columns:1fr 1fr;

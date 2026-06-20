@@ -18,7 +18,7 @@ let cardBySku = {};
 let latestProductsJsonText = "";
 let refreshLock = false;
 let authEventSource = null;
-const APP_ASSET_VERSION = "202606201210";
+const APP_ASSET_VERSION = "202606201225";
 const ORDER_WHATSAPP_NUMBER = "60126151633";
 const API_BASE_URL = cleanValue(window.GR_RACING_API_BASE_URL || "").replace(/\/$/, "");
 const ACCOUNTS_STORAGE_KEY = "grRacingCustomerAccounts";
@@ -2040,11 +2040,24 @@ async function handlePasswordReset(event){
   }
 }
 
+function togglePasswordVisibility(button){
+  const input = document.getElementById(button.dataset.passwordToggle || "");
+  if(!input) return;
+
+  const shouldShow = input.type === "password";
+  input.type = shouldShow ? "text" : "password";
+  button.textContent = shouldShow ? "Hide" : "Show";
+}
+
 function bindLoginEvents(){
   document.getElementById("loginForm").addEventListener("submit", handleLogin);
   document.getElementById("signupForm").addEventListener("submit", handleSignup);
   document.getElementById("forgotPasswordForm").addEventListener("submit", handleForgotVerify);
   document.getElementById("resetPasswordForm").addEventListener("submit", handlePasswordReset);
+
+  document.querySelectorAll("[data-password-toggle]").forEach(button => {
+    button.addEventListener("click", () => togglePasswordVisibility(button));
+  });
 
   document.getElementById("showSignupButton").addEventListener("click", () => {
     clearLoginMessages();
