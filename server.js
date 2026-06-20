@@ -10,16 +10,65 @@ const ROOT = __dirname;
 const DATABASE_PATH = process.env.DATABASE_PATH
   ? path.resolve(process.env.DATABASE_PATH)
   : path.join(ROOT, "server-data.json");
+const DATABASE_DIR = path.dirname(DATABASE_PATH);
+const SUPABASE_URL = cleanEnv(process.env.SUPABASE_URL).replace(/\/$/, "");
+const SUPABASE_SERVICE_ROLE_KEY = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_STATE_ID = cleanEnv(process.env.SUPABASE_STATE_ID) || "grracing";
 const MAX_BODY_BYTES = 1024 * 1024;
 const resetTokens = new Map();
 const eventClients = new Set();
 let mutationQueue = Promise.resolve();
 
+function cleanEnv(value){
+  return String(value === null || value === undefined ? "" : value).trim();
+}
+
 function emptyDatabase(){
   return { version:1, accounts:[], sessions:[], orders:[] };
 }
 
-function loadDatabase(){
+async function supabaseRequest(pathname, options = {}){
+  const response = await fetch(`${SUPABASE_URL}/rest/v1${pathname}`, {
+    method:options.method || "GET",
+    headers:Object.assign({
+      "apikey":SUPABASE_SERVICE_ROLE_KEY,
+      "Authorization":`Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type":"application/json"
+    }, options.headers || {}),
+    body:options.body
+  });
+
+  const text = await response.text();
+  let data = null;
+
+  try{
+    data = text ? JSON.parse(text) : null;
+  }catch(error){
+    data = text;
+  }
+
+  if(!response.ok){
+    const message = data && data.message ? data.message : `Supabase request failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+async function loadDatabase(){
+  if(USE_SUPABASE){
+    const rows = await supabaseRequest(`/app_state?id=eq.${encodeURIComponent(SUPABASE_STATE_ID)}&select=data`);
+    const database = rows && rows[0] && rows[0].data ? rows[0].data : emptyDatabase();
+
+    return {
+      version:1,
+      accounts:Array.isArray(database.accounts) ? database.accounts : [],
+      sessions:Array.isArray(database.sessions) ? database.sessions : [],
+      orders:Array.isArray(database.orders) ? database.orders : []
+    };
+  }
+
   try{
     const parsed = JSON.parse(fs.readFileSync(DATABASE_PATH, "utf8"));
     return {
@@ -30,15 +79,41 @@ function loadDatabase(){
     };
   }catch(error){
     const database = emptyDatabase();
-    saveDatabase(database);
+    await saveDatabase(database);
     return database;
   }
 }
 
-function saveDatabase(database){
+async function saveDatabase(database){
+  if(USE_SUPABASE){
+    await supabaseRequest("/app_state", {
+      method:"POST",
+      headers:{
+        "Prefer":"resolution=merge-duplicates"
+      },
+      body:JSON.stringify({
+        id:SUPABASE_STATE_ID,
+        data:database,
+        updated_at:new Date().toISOString()
+      })
+    });
+    return;
+  }
+
+  fs.mkdirSync(DATABASE_DIR, { recursive:true });
   const temporaryPath = `${DATABASE_PATH}.tmp`;
   fs.writeFileSync(temporaryPath, JSON.stringify(database, null, 2), "utf8");
   fs.renameSync(temporaryPath, DATABASE_PATH);
+}
+
+function databaseStatus(){
+  return {
+    backend:USE_SUPABASE ? "supabase" : "file",
+    supabaseConfigured:USE_SUPABASE,
+    configuredPath:Boolean(process.env.DATABASE_PATH),
+    persistentPath:DATABASE_PATH.startsWith(`${path.sep}var${path.sep}data${path.sep}`),
+    exists:fs.existsSync(DATABASE_PATH)
+  };
 }
 
 function clean(value){
@@ -210,12 +285,16 @@ function serveStatic(request, response, url){
 }
 
 async function handleApi(request, response, url){
-  const database = loadDatabase();
+  const database = await loadDatabase();
   const method = request.method || "GET";
   const pathname = url.pathname;
 
   if(method === "GET" && pathname === "/api/health"){
-    json(response, 200, { ok:true, serverTime:new Date().toISOString() });
+    json(response, 200, {
+      ok:true,
+      serverTime:new Date().toISOString(),
+      database:databaseStatus()
+    });
     return;
   }
 
@@ -274,7 +353,7 @@ async function handleApi(request, response, url){
       createdAt:new Date().toISOString()
     };
     database.accounts.push(account);
-    saveDatabase(database);
+    await saveDatabase(database);
     broadcast("accounts", { action:"created", account:publicAccount(account) });
     json(response, 201, { account:publicAccount(account) });
     return;
@@ -336,7 +415,7 @@ async function handleApi(request, response, url){
     }
 
     if(imported > 0){
-      saveDatabase(database);
+      await saveDatabase(database);
       broadcast("accounts", { action:"imported", count:imported });
     }
     json(response, 200, { imported });
@@ -370,7 +449,7 @@ async function handleApi(request, response, url){
       lastSeenAt:new Date().toISOString()
     };
     database.sessions.push(session);
-    saveDatabase(database);
+    await saveDatabase(database);
     json(response, 200, {
       token:session.token,
       sessionId:session.id,
@@ -392,7 +471,7 @@ async function handleApi(request, response, url){
   if(method === "POST" && pathname === "/api/logout"){
     const token = getBearerToken(request);
     database.sessions = database.sessions.filter(session => session.token !== token);
-    saveDatabase(database);
+    await saveDatabase(database);
     json(response, 200, { ok:true });
     return;
   }
@@ -439,7 +518,7 @@ async function handleApi(request, response, url){
     account.passwordHash = passwordHash(password, salt);
     account.passwordAlgorithm = "scrypt";
     resetTokens.delete(clean(body.resetToken));
-    saveDatabase(database);
+    await saveDatabase(database);
     json(response, 200, { username:account.username });
     return;
   }
@@ -459,7 +538,7 @@ async function handleApi(request, response, url){
 
     database.accounts = database.accounts.filter(item => item.id !== accountId);
     database.sessions = database.sessions.filter(session => session.accountId !== accountId);
-    saveDatabase(database);
+    await saveDatabase(database);
     broadcast("accounts", { action:"removed", accountId });
     json(response, 200, { ok:true });
     return;
@@ -498,7 +577,7 @@ async function handleApi(request, response, url){
       sessionId:context.session.id
     };
     database.orders.push(order);
-    saveDatabase(database);
+    await saveDatabase(database);
     broadcast("orders", { action:"created", order });
     json(response, 201, { order });
     return;
