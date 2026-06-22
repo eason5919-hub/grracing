@@ -2286,7 +2286,7 @@ function showCachedCategory(){
     buildProductCardsOnce();
   }
 
-  const q = document.getElementById('search').value.toLowerCase();
+  const q = document.getElementById('search').value.trim().toLowerCase();
 
   categoryCardCache["ALL_PRODUCTS"].forEach(card => {
     const sku = card.dataset.sku;
@@ -2299,6 +2299,7 @@ function showCachedCategory(){
 
     const searchable = `
       ${getProductDisplayBrand(p)}
+      ${getProductCategoryBrand(p)}
       ${getProductDescription(p)}
     `.toLowerCase();
 
