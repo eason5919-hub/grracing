@@ -1,12 +1,18 @@
 :root{
-  --navy:#101b26;
-  --navy-soft:#263746;
-  --gold:#c8ad7f;
-  --gold-light:#e2d2b2;
-  --cream:#f8f2e5;
-  --canvas:#e9e0cd;
-  --slate:#52616d;
-  --danger:#9b3442;
+  --navy:#081521;
+  --navy-soft:#173047;
+  --navy-glow:#254d68;
+  --gold:#d1ad62;
+  --gold-light:#f4dfaa;
+  --cream:#fff8ec;
+  --paper:#fffdf8;
+  --canvas:#f1eadc;
+  --slate:#617383;
+  --danger:#b73545;
+  --success:#1c7a46;
+  --line:rgba(209,173,98,.38);
+  --shadow:0 14px 36px rgba(8,21,33,.14);
+  --soft-shadow:0 8px 22px rgba(8,21,33,.10);
 }
 
 *{
@@ -26,8 +32,10 @@ body{
   width:100%;
   height:100%;
   margin:0;
-  font-family:Arial,sans-serif;
-  background:var(--canvas);
+  font-family:Inter,Arial,sans-serif;
+  background:
+    radial-gradient(circle at top left,rgba(209,173,98,.24),transparent 34%),
+    linear-gradient(180deg,#f8f1e3 0%,var(--canvas) 44%,#e7ddcb 100%);
   color:var(--navy);
   overflow:hidden;
   touch-action:manipulation;
@@ -52,15 +60,18 @@ body{
   display:flex;
   flex-direction:column;
   overflow:hidden;
-  background:var(--canvas);
+  background:transparent;
 }
 
 header{
   flex:0 0 auto;
-  background:linear-gradient(135deg,var(--navy),#1d3040);
+  background:
+    linear-gradient(135deg,rgba(8,21,33,.98),rgba(23,48,71,.96)),
+    radial-gradient(circle at top right,rgba(209,173,98,.24),transparent 40%);
   color:var(--cream);
-  padding:12px;
-  border-bottom:2px solid var(--gold);
+  padding:14px;
+  border-bottom:1px solid rgba(244,223,170,.34);
+  box-shadow:0 12px 30px rgba(8,21,33,.22);
   z-index:1000;
 }
 
@@ -74,24 +85,25 @@ header{
 
 .headerName{
   margin:0;
-  color:var(--gold-light);
+  color:#fff5d6;
   font-size:clamp(18px,2.4vw,30px);
   line-height:1.1;
-  letter-spacing:.055em;
+  letter-spacing:.075em;
   text-transform:uppercase;
-  text-shadow:0 2px 8px #0008;
+  text-shadow:0 2px 12px rgba(0,0,0,.38);
 }
 
 #refreshAppButton{
   flex:0 0 auto;
-  background:var(--navy-soft);
+  background:rgba(255,255,255,.08);
   color:var(--gold-light);
-  border:1px solid var(--gold);
-  height:38px;
-  padding:0 14px;
-  border-radius:10px;
+  border:1px solid rgba(244,223,170,.32);
+  height:40px;
+  padding:0 15px;
+  border-radius:999px;
   font-size:13px;
   font-weight:900;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 
 .searchBox{
@@ -101,12 +113,14 @@ header{
 
 #search{
   width:100%;
-  padding:12px 44px 12px 12px;
-  border-radius:10px;
-  border:1px solid var(--gold);
-  background:var(--cream);
+  padding:13px 46px 13px 14px;
+  border-radius:16px;
+  border:1px solid rgba(244,223,170,.45);
+  background:rgba(255,253,248,.96);
   color:var(--navy);
   font-size:16px;
+  outline:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 20px rgba(0,0,0,.12);
 }
 
 #clearSearchButton{
@@ -117,11 +131,12 @@ header{
   width:30px;
   height:30px;
   padding:0;
-  border-radius:50%;
-  background:var(--navy);
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--navy-soft),var(--navy));
   color:var(--gold-light);
   font-size:13px;
   line-height:30px;
+  box-shadow:0 6px 14px rgba(8,21,33,.22);
 }
 
 .headerActionRow{
@@ -135,7 +150,7 @@ header{
 }
 
 #logoutButton{
-  background:var(--slate);
+  background:rgba(255,255,255,.10);
   flex:0 0 auto;
 }
 
@@ -146,11 +161,11 @@ header{
 
 #yearButton{
   white-space:nowrap;
-  background:var(--navy);
+  background:rgba(255,255,255,.10);
   color:var(--gold-light);
-  border:1px solid var(--gold);
+  border:1px solid rgba(244,223,170,.35);
   padding:9px 12px;
-  border-radius:10px;
+  border-radius:999px;
   cursor:pointer;
   font-weight:bold;
   font-size:13px;
@@ -164,13 +179,14 @@ header{
 
 .yearDropdown{
   position:fixed;
-  background:var(--cream);
-  border:1px solid var(--gold);
-  border-radius:10px;
-  padding:6px;
-  box-shadow:0 4px 18px #0004;
+  background:rgba(255,248,236,.98);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:8px;
+  box-shadow:var(--shadow);
   z-index:999999;
   width:105px;
+  backdrop-filter:blur(12px);
 }
 
 .yearDropdown button{
@@ -208,11 +224,11 @@ header{
 
 .pcdMenu button{
   white-space:nowrap;
-  background:var(--navy);
+  background:rgba(255,255,255,.10);
   color:var(--gold-light);
-  border:1px solid var(--gold);
+  border:1px solid rgba(244,223,170,.35);
   padding:9px 12px;
-  border-radius:10px;
+  border-radius:999px;
   cursor:pointer;
   font-weight:bold;
   font-size:13px;
@@ -221,8 +237,9 @@ header{
 
 .pcdMenu button.active,
 .categoryMenu button.active{
-  background:var(--gold);
+  background:linear-gradient(135deg,#f6d98d,var(--gold));
   color:var(--navy);
+  box-shadow:0 7px 18px rgba(209,173,98,.28);
 }
 
 .categoryMenu{
@@ -231,20 +248,21 @@ header{
   gap:8px;
   overflow-x:auto;
   overflow-y:hidden;
-  padding:10px;
-  background:var(--cream);
-  border-bottom:1px solid var(--gold);
+  padding:12px 10px;
+  background:rgba(255,248,236,.86);
+  border-bottom:1px solid var(--line);
   z-index:999;
   margin:0;
+  backdrop-filter:blur(10px);
 }
 
 .categoryMenu button{
   white-space:nowrap;
-  background:var(--navy);
+  background:linear-gradient(135deg,var(--navy-soft),var(--navy));
   color:var(--gold-light);
-  border:1px solid var(--gold);
-  padding:6px 10px;
-  border-radius:10px;
+  border:1px solid rgba(209,173,98,.55);
+  padding:7px 12px;
+  border-radius:14px;
   cursor:pointer;
   font-weight:bold;
   font-size:13px;
@@ -260,7 +278,7 @@ header{
   max-width:135px;
   object-fit:contain;
   display:block;
-  border-radius:4px;
+  border-radius:8px;
 }
 
 .brandCategoryButton span{
@@ -285,32 +303,34 @@ main{
   display:flex;
   flex-direction:column;
   gap:8px;
-  padding:10px;
+  padding:12px;
   overflow-y:auto;
   overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
-  background:var(--canvas);
+  background:transparent;
   padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));
 }
 
 .card{
-  background:var(--cream);
-  border-radius:9px;
-  box-shadow:0 2px 8px #101b2618;
+  background:linear-gradient(135deg,rgba(255,253,248,.98),rgba(255,248,236,.94));
+  border-radius:18px;
+  box-shadow:var(--soft-shadow);
   display:flex;
   align-items:center;
   min-height:64px;
-  padding:12px 12px;
+  padding:14px 14px;
   cursor:pointer;
   overflow:hidden;
-  transition:filter .15s ease;
-  border:1px solid #d8c6a5;
+  transition:filter .15s ease,transform .15s ease,box-shadow .15s ease;
+  border:1px solid rgba(209,173,98,.30);
   flex:0 0 auto;
 }
 
 .card:hover{
   filter:brightness(.98);
+  transform:translateY(-1px);
+  box-shadow:var(--shadow);
 }
 
 .info{
@@ -332,6 +352,7 @@ main{
   font-weight:900;
   margin-right:8px;
   color:var(--navy);
+  letter-spacing:.015em;
 }
 
 .price{
@@ -351,9 +372,12 @@ main{
   font-weight:bold;
   text-align:center;
   white-space:nowrap;
-  padding:5px 8px;
+  padding:7px 10px;
   min-width:95px;
   display:inline-block;
+  border-radius:999px;
+  background:rgba(209,173,98,.16);
+  color:var(--navy-soft);
 }
 
 .orderArea{
@@ -369,21 +393,33 @@ main{
 
 button{
   border:0;
-  border-radius:10px;
+  border-radius:13px;
   padding:11px 14px;
   font-weight:bold;
-  background:var(--navy);
+  background:linear-gradient(135deg,var(--navy-soft),var(--navy));
   color:var(--gold-light);
-  border:1px solid var(--gold);
+  border:1px solid rgba(209,173,98,.52);
   cursor:pointer;
   touch-action:manipulation;
   user-select:none;
   -webkit-user-select:none;
+  box-shadow:0 8px 18px rgba(8,21,33,.13);
+  transition:transform .15s ease,filter .15s ease,box-shadow .15s ease;
+}
+
+button:hover{
+  filter:brightness(1.04);
+}
+
+button:active{
+  transform:translateY(1px);
+  box-shadow:0 4px 10px rgba(8,21,33,.12);
 }
 
 button:disabled{
   background:#8b9093;
   cursor:not-allowed;
+  box-shadow:none;
 }
 
 .qtyControls{
@@ -407,10 +443,10 @@ button:disabled{
   height:38px;
   text-align:center;
   padding:7px;
-  border:1px solid var(--gold);
-  background:var(--cream);
+  border:1px solid var(--line);
+  background:var(--paper);
   color:var(--navy);
-  border-radius:8px;
+  border-radius:12px;
   font-weight:bold;
   font-size:16px;
 }
@@ -467,7 +503,7 @@ select{
 }
 
 .cartRow{
-  border-bottom:1px solid #d8c6a5;
+  border-bottom:1px solid var(--line);
   padding:12px 0;
 }
 
@@ -520,14 +556,17 @@ select{
 #sendWhatsapp{
   width:100%;
   margin-top:16px;
-  background:var(--gold);
+  background:linear-gradient(135deg,#f6d98d,var(--gold));
   color:var(--navy);
 }
 
 .loginScreen{
   position:fixed;
   inset:0;
-  background:radial-gradient(circle at top,var(--navy-soft),var(--navy) 65%);
+  background:
+    radial-gradient(circle at 18% 12%,rgba(209,173,98,.28),transparent 28%),
+    radial-gradient(circle at 85% 10%,rgba(37,77,104,.54),transparent 26%),
+    linear-gradient(135deg,#06111c 0%,var(--navy) 52%,#172c40 100%);
   z-index:99999;
   display:flex;
   align-items:center;
@@ -537,14 +576,15 @@ select{
 }
 
 .loginBox{
-  background:var(--cream);
-  border:1px solid var(--gold);
-  box-shadow:0 18px 50px #0008;
+  background:rgba(255,248,236,.94);
+  border:1px solid rgba(244,223,170,.44);
+  box-shadow:0 24px 70px rgba(0,0,0,.34);
   width:min(480px,100%);
   max-height:calc(100dvh - 40px);
   overflow-y:auto;
-  padding:24px;
-  border-radius:16px;
+  padding:26px;
+  border-radius:24px;
+  backdrop-filter:blur(18px);
 }
 
 .loginBox h2{
@@ -571,12 +611,21 @@ select{
 
 .loginBox input{
   width:100%;
-  padding:12px;
+  padding:13px 14px;
   margin-bottom:14px;
-  border-radius:10px;
-  border:1px solid var(--gold);
-  background:#fffdf7;
+  border-radius:14px;
+  border:1px solid rgba(209,173,98,.44);
+  background:var(--paper);
   font-size:16px;
+  outline:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.loginBox input:focus,
+#search:focus,
+.qtyInput:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(209,173,98,.20),inset 0 1px 0 rgba(255,255,255,.8);
 }
 
 .passwordField{
@@ -596,7 +645,7 @@ select{
   transform:translateY(-50%);
   min-height:34px;
   padding:0 10px;
-  border-radius:8px;
+  border-radius:12px;
   background:var(--navy-soft);
   color:var(--gold-light);
   border:1px solid var(--gold);
@@ -617,7 +666,7 @@ select{
 }
 
 .loginBox .secondaryButton{
-  background:var(--gold);
+  background:linear-gradient(135deg,#f6d98d,var(--gold));
   color:var(--navy);
   border-color:var(--navy);
 }
@@ -630,6 +679,7 @@ select{
   border:0;
   text-decoration:underline;
   padding:8px;
+  box-shadow:none;
 }
 
 .formMessage{
@@ -644,7 +694,7 @@ select{
 }
 
 .successMessage{
-  color:#1c6b3d;
+  color:var(--success);
 }
 
 #branchSettingButton{
@@ -656,12 +706,13 @@ select{
 .branchSettingPanel,
 .branchSplitPanel,
 .quickBranchDropdown{
-  background:#f3ecdd;
-  border:1px solid var(--gold);
-  border-radius:12px;
+  background:rgba(255,253,248,.92);
+  border:1px solid var(--line);
+  border-radius:16px;
   padding:10px;
   margin:8px 0;
   box-sizing:border-box;
+  box-shadow:var(--soft-shadow);
 }
 
 .branchSettingPanel h3,
@@ -800,7 +851,7 @@ select{
 .confirmBox{
   width:min(420px,100%);
   background:var(--cream);
-  border-radius:16px;
+  border-radius:22px;
   padding:18px;
   box-shadow:0 16px 40px rgba(0,0,0,.22);
 }
