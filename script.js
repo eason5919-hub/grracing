@@ -2211,6 +2211,54 @@ function productMatchesSize(product){
   return size === currentSizeFilter || desc.includes(currentSizeFilter);
 }
 
+function escapeRegExp(value){
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getKnownProductBrands(){
+  const brandSet = new Set(mainBrandCategories);
+
+  products.forEach(product => {
+    const categoryBrand = getProductCategoryBrand(product);
+    const displayBrand = getProductDisplayBrand(product);
+
+    if(categoryBrand) brandSet.add(categoryBrand);
+    if(displayBrand) brandSet.add(displayBrand);
+  });
+
+  return Array.from(brandSet).sort((a, b) => b.length - a.length);
+}
+
+function findExactBrandInSearch(searchValue){
+  const normalizedSearch = cleanValue(searchValue).toUpperCase().replace(/\s+/g, " ");
+
+  if(!normalizedSearch){
+    return null;
+  }
+
+  const knownBrands = getKnownProductBrands();
+
+  for(const brand of knownBrands){
+    const escapedBrand = escapeRegExp(brand).replace(/\s+/g, "\\s+");
+    const pattern = new RegExp(`(^|\\s)${escapedBrand}(?=\\s|$)`, "i");
+    const match = normalizedSearch.match(pattern);
+
+    if(match){
+      const remainingSearch = normalizedSearch
+        .replace(pattern, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return {
+        brand,
+        remainingTerms: remainingSearch.toLowerCase().split(/\s+/).filter(Boolean)
+      };
+    }
+  }
+
+  return null;
+}
+
 function updateActiveButtons(){
   document.querySelectorAll('.categoryMenu button').forEach(btn => {
     btn.classList.remove('active');
@@ -2286,7 +2334,11 @@ function showCachedCategory(){
     buildProductCardsOnce();
   }
 
-  const q = document.getElementById('search').value.trim().toLowerCase();
+  const q = document.getElementById('search').value.trim();
+  const exactSearchBrand = findExactBrandInSearch(q);
+  const searchTerms = exactSearchBrand
+    ? exactSearchBrand.remainingTerms
+    : q.toLowerCase().split(/\s+/).filter(Boolean);
 
   categoryCardCache["ALL_PRODUCTS"].forEach(card => {
     const sku = card.dataset.sku;
@@ -2303,7 +2355,10 @@ function showCachedCategory(){
       ${getProductDescription(p)}
     `.toLowerCase();
 
-    const matchSearch = searchable.includes(q);
+    const productBrandMatchesSearchBrand = !exactSearchBrand ||
+      getProductDisplayBrand(p) === exactSearchBrand.brand ||
+      getProductCategoryBrand(p) === exactSearchBrand.brand;
+    const matchSearch = productBrandMatchesSearchBrand && searchTerms.every(term => searchable.includes(term));
     const matchBrand = productMatchesBrand(p);
     const matchYear = productMatchesYear(p);
     const matchSize = productMatchesSize(p);
