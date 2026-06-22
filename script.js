@@ -1683,10 +1683,14 @@ async function apiRequest(path, options = {}){
 
   if(!response.ok){
     if(response.status === 404 || response.status === 405){
-      throw new Error("Signup server not found. Please open the app from the PC server link with :8787.");
+      const error = new Error("Signup server not found. Please open the app from the PC server link with :8787.");
+      error.status = response.status;
+      throw error;
     }
 
-    throw new Error(data.error || "Server request failed.");
+    const error = new Error(data.error || "Server request failed.");
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -1826,6 +1830,11 @@ async function validateCurrentSession(options = {}){
     applyLoggedInUser(user);
     return true;
   }catch(error){
+    if(error.status !== 401){
+      applyLoggedInUser(currentUser);
+      return true;
+    }
+
     forceLogin("This account is no longer active. Please contact admin.");
     return false;
   }
