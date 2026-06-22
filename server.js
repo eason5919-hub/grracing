@@ -152,6 +152,7 @@ function passwordMatches(password, account){
 function publicAccount(account){
   return {
     id:account.id,
+    customerCode:account.customerCode || "",
     companyName:account.companyName,
     ssmNumber:account.ssmNumber,
     tinNumber:account.tinNumber,
@@ -357,6 +358,7 @@ async function handleApi(request, response, url){
     const salt = crypto.randomBytes(16).toString("hex");
     const account = {
       id:crypto.randomUUID(),
+      customerCode:"",
       companyName,
       ssmNumber,
       ssmKey,
@@ -428,6 +430,7 @@ async function handleApi(request, response, url){
 
       database.accounts.push({
         id:crypto.randomUUID(),
+        customerCode:clean(item.customerCode),
         companyName,
         ssmNumber,
         ssmKey,
@@ -559,6 +562,22 @@ async function handleApi(request, response, url){
 
   if(method === "GET" && pathname === "/api/accounts"){
     json(response, 200, { accounts:database.accounts.map(publicAccount) });
+    return;
+  }
+
+  if(method === "PATCH" && pathname.startsWith("/api/accounts/")){
+    const accountId = decodeURIComponent(pathname.slice("/api/accounts/".length));
+    const account = database.accounts.find(item => item.id === accountId);
+    if(!account){
+      json(response, 404, { error:"Account not found." });
+      return;
+    }
+
+    const body = await readJson(request);
+    account.customerCode = clean(body.customerCode);
+    await saveDatabase(database);
+    broadcast("accounts", { action:"updated", account:publicAccount(account) });
+    json(response, 200, { account:publicAccount(account) });
     return;
   }
 

@@ -2896,7 +2896,10 @@ document.getElementById('sendWhatsapp').onclick = async () => {
   }
 
   let totalOrder = 0;
+  const currentUser = getCurrentUser() || {};
+  const customerCode = cleanValue(currentUser.customerCode);
   const lines = [
+    `Code: ${customerCode}`,
     `Customer: ${customerName || customerUsername || "-"}`,
     `Username: ${customerUsername || "-"}`,
     ""
