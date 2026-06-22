@@ -2,3 +2,5 @@ server-data.json
 server-data.json.tmp
 *.log
 node_modules/
+SYNC PRODUCTS FROM TYRE ONE.ps1
+START PRODUCTS AUTO SYNC.cmd
