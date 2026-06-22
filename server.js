@@ -136,6 +136,10 @@ function validPhone(value){
   return /^60\d{8,10}$/.test(normalizePhone(value));
 }
 
+function normalizeCustomerCode(value){
+  return clean(value).toUpperCase();
+}
+
 function passwordHash(password, salt){
   return crypto.scryptSync(password, salt, 64).toString("hex");
 }
@@ -574,7 +578,15 @@ async function handleApi(request, response, url){
     }
 
     const body = await readJson(request);
-    account.customerCode = clean(body.customerCode);
+    const customerCode = normalizeCustomerCode(body.customerCode);
+    if(customerCode && database.accounts.some(item =>
+      item.id !== accountId && normalizeCustomerCode(item.customerCode) === customerCode
+    )){
+      json(response, 409, { error:"This customer code is already used." });
+      return;
+    }
+
+    account.customerCode = customerCode;
     await saveDatabase(database);
     broadcast("accounts", { action:"updated", account:publicAccount(account) });
     json(response, 200, { account:publicAccount(account) });
@@ -646,7 +658,7 @@ const server = http.createServer(async (request, response) => {
     if(request.method === "OPTIONS"){
       response.writeHead(204, {
         "Access-Control-Allow-Origin":"*",
-        "Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS",
+        "Access-Control-Allow-Methods":"GET,POST,PATCH,DELETE,OPTIONS",
         "Access-Control-Allow-Headers":"Content-Type,Authorization"
       });
       response.end();
@@ -654,7 +666,7 @@ const server = http.createServer(async (request, response) => {
     }
 
     if(url.pathname.startsWith("/api/")){
-      if(request.method === "POST" || request.method === "DELETE"){
+      if(request.method === "POST" || request.method === "PATCH" || request.method === "DELETE"){
         await enqueueMutation(() => handleApi(request, response, url));
       }else{
         await handleApi(request, response, url);
