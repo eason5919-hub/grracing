@@ -7133,7 +7133,7 @@
     "PHOTO": "AP 01",
     "PHOTO_URL": "https://drive.google.com/file/d/1gZoYITz7ZZL0yclfkF-r-2Z-VSH9GqNT/view?usp=sharing",
     "PRICE": "233.10",
-    "QTY": 16,
+    "QTY": 8,
     "STATUS": "Limited",
     "rowColor": "",
     "statusBgColor": "#FFF2CC",
@@ -7148,11 +7148,11 @@
     "PHOTO": "A 610",
     "PHOTO_URL": "https://drive.google.com/file/d/1R29cxrAAZcMcPtgh-OJZQqRSTtXi5I0J/view?usp=sharing",
     "PRICE": "234.80",
-    "QTY": 7,
-    "STATUS": "Limited",
+    "QTY": 1,
+    "STATUS": "Very Limited",
     "rowColor": "",
-    "statusBgColor": "#FFF2CC",
-    "statusFontColor": "#000000"
+    "statusBgColor": "#FFC7CE",
+    "statusFontColor": "#9C0006"
   },
   {
     "sku": "TYRE-728-APLUS-VIETNAM-245-40R20-Z-AERIX-RS01-99Y-XL-Y26",
